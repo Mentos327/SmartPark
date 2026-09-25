@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Edit Guard{% endblock %}
+{% block page_title %}Edit Guard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-person-badge me-2 text-green"></i>Edit Guard</h3>
+    <span class="sub-title">Update details for {{ guard.name }}</span>
+  </div>
+  <a href="{{ url_for('admin.guards') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Guards
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-top-green">
+      <div class="card-header bg-green">
+        <h3 class="card-title"><i class="icon icon-person-badge me-2"></i>Guard Account Details</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.edit_guard', guard_id=guard.id) }}">
+          <div class="mb-3">
+            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="name" value="{{ guard.name }}" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" name="email" value="{{ guard.email or '' }}" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" name="phone" value="{{ guard.phone or '' }}"
+                   placeholder="0712 345 678" />
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">National ID Number</label>
+            <input type="text" class="form-control" name="national_id" value="{{ guard.national_id or '' }}"
+                   placeholder="e.g. 12345678" />
+          </div>
+
+          <div class="form-text mb-3">
+            To reset this guard's password, use "Dismiss Guard" and re-add them, or ask them to use
+            "Forgot password" on the login page.
+          </div>
+
+          <button type="submit" class="btn btn-success w-100">
+            <i class="icon icon-check-circle me-1"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Reserve Slots for Event{% endblock %}
+{% block page_title %}Event Reservation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div><h3><i class="icon icon-calendar-check me-2 text-purple"></i>Reserve Slots for Event</h3><span class="sub-title">Block multiple slots for a specific event or VIP visit</span></div>
+  <a href="{{ url_for('guard.dashboard') }}" class="btn btn-sm btn-outline-secondary"><i class="icon icon-arrow-left me-1"></i>Dashboard</a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card border-top-purple">
+      <div class="card-header bg-purple">
+        <h3 class="card-title"><i class="icon icon-calendar-check me-2"></i>Event Block Reservation</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('guard.event_reserve') }}">
+          <div class="mb-3">
+            <label class="form-label">Event Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="event_label" placeholder="e.g. Board Meeting, VIP Visit, Wedding" required />
+            <div class="form-text">This label appears on the dashboard and slot map.</div>
+          </div>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Start Time <span class="text-danger">*</span></label>
+              <input type="datetime-local" class="form-control" name="reserved_from" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">End Time <span class="text-danger">*</span></label>
+              <input type="datetime-local" class="form-control" name="reserved_until" required />
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Select Slots <span class="fw-normal-case">(tick all slots needed)</span></label>
+            {% if available_slots %}
+            <div class="mb-2">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="selectAll" />
+                <label class="form-check-label fs-82 text-muted" for="selectAll">Select all available slots</label>
+              </div>
+            </div>
+            <div class="row g-2">
+              {% for slot in available_slots %}
+              <div class="col-6 col-md-3">
+                <div class="form-check border rounded p-2 bg-tint-gray">
+                  <input class="form-check-input slot-checkbox" type="checkbox" name="slot_ids" value="{{ slot.id }}" id="slot_{{ slot.id }}" />
+                  <label class="form-check-label fw-bold fs-85" for="slot_{{ slot.id }}">
+                    Level {{ slot.level if slot.level else 'G' }} — {{ slot.slot_number }}
+                    {% if slot.type != "standard" %}<span class="text-muted fs-sm d-block">{{ slot.type }}</span>{% endif %}
+                  </label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-warning"><i class="icon icon-exclamation-triangle me-1"></i>No available slots right now.</div>
+            {% endif %}
+          </div>
+          <button type="submit" class="btn btn-primary w-100" {% if not available_slots %}disabled{% endif %}>
+            <i class="icon icon-calendar-check me-2"></i>Reserve Selected Slots
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('selectAll').addEventListener('change',function(){
+  document.querySelectorAll('.slot-checkbox').forEach(function(cb){cb.checked=document.getElementById('selectAll').checked;});
+});
+</script>
+{% endblock %}

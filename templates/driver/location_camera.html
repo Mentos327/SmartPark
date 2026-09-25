@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}{{ location.name }} — Live View{% endblock %}
+{% block page_title %}Live View{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-camera me-2 text-blue"></i>{{ location.name }}</h3>
+    <span class="sub-title"><i class="icon icon-geo-alt me-1"></i>{{ location.county }} &bull; {{ location.address }} &bull; KES {{ location.hourly_rate | int }}/hr</span>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('driver.location_detail', location_id=location.id) }}" class="btn btn-sm btn-outline-secondary">
+      Details
+    </a>
+    <a href="{{ url_for('driver.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="icon icon-arrow-left me-1"></i>Back
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-7">
+    {% if location.camera_url %}
+    <div class="card">
+      <div class="card-header bg-dark">
+        <h3 class="card-title"><i class="icon icon-camera me-2"></i>Live CCTV — {{ location.name }}</h3>
+        <span class="badge bg-success">Live</span>
+      </div>
+      <div class="card-body p-0 video-frame-sm">
+        <img src="{{ url_for('api.proxy_stream', location_id=location.id) }}"
+             class="w-100 media-h-320 media-cover"
+             alt="Live parking lot camera"
+             onerror="this.alt='Camera feed unavailable.';" />
+      </div>
+    </div>
+    <div class="alert alert-success mt-3 fs-82">
+      <i class="icon icon-camera me-1"></i>
+      Live camera feed of {{ location.name }}. Tap any green slot on the right to reserve it.
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card-header bg-dark">
+        <h3 class="card-title"><i class="icon icon-camera me-2"></i>Your Device Camera</h3>
+        <span id="cameraStatus" class="badge bg-danger">Camera Off</span>
+      </div>
+      <div class="card-body p-0 video-frame">
+        <video id="cameraFeed" playsinline muted class="w-100 rounded media-h-300 media-cover"></video>
+      </div>
+      <div class="card-footer d-flex gap-2">
+        <button id="btnStartCamera" class="btn btn-success flex-grow-1" onclick="startCamera()">
+          <i class="icon icon-arrow-right me-1"></i>Start Camera
+        </button>
+        <button id="btnStop" class="btn btn-secondary" onclick="stopCamera()" disabled>
+          <i class="icon icon-exclamation-circle me-1"></i>Stop
+        </button>
+      </div>
+    </div>
+    <div class="alert alert-info mt-3 fs-82">
+      <i class="icon icon-info-circle me-1"></i>
+      <strong>Using your device camera.</strong> This location hasn't set up a CCTV feed yet.
+      Use the slot grid on the right to check live availability.
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-md-5">
+    <div class="card mb-3">
+      <div class="card-header bg-navy">
+        <h3 class="card-title"><i class="icon icon-cash me-2"></i>Availability Now</h3>
+      </div>
+      <div class="card-body">
+        <div class="row g-2 text-center">
+          <div class="col-6"><div class="p-2 rounded bg-tint-green"><div class="stat-figure green">{{ slot_summary.available }}</div><div class="eyebrow eyebrow-green">Available</div></div></div>
+          <div class="col-6"><div class="p-2 rounded bg-tint-red"><div class="stat-figure red">{{ slot_summary.occupied }}</div><div class="eyebrow eyebrow-red">Occupied</div></div></div>
+          <div class="col-6"><div class="p-2 rounded bg-tint-yellow"><div class="stat-figure yellow">{{ slot_summary.reserved }}</div><div class="eyebrow eyebrow-yellow">Reserved</div></div></div>
+          <div class="col-6"><div class="p-2 rounded bg-tint-gray"><div class="stat-figure gray">{{ slot_summary.disabled }}</div><div class="label-eyebrow">Closed</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-dark">
+        <h3 class="card-title"><i class="icon icon-grid-3x3 me-2"></i>Choose a Slot</h3>
+        <div class="slot-legend d-flex gap-2">
+          <div class="d-flex align-items-center gap-1 fs-sm">
+            <span class="slot-legend available"></span>Tap to reserve
+          </div>
+          <div class="d-flex align-items-center gap-1 fs-sm">
+            <span class="slot-legend occupied"></span>Taken
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if slots %}
+        <div class="slot-grid">
+          {% for slot in slots %}
+          {% if slot.status == "available" %}
+          <a href="{{ url_for('driver.reserve') }}?location_id={{ location.id }}&slot_id={{ slot.id }}"
+       class="slot-card slot-available no-underline"
+       title="Click to reserve Slot {{ slot.slot_number }}">
+            <div class="slot-number">{{ slot.slot_number }}</div>
+            <div class="slot-status-label">Tap</div>
+          </a>
+          {% else %}
+          <div class="slot-card slot-{{ slot.status }}" title="Slot {{ slot.slot_number }} — {{ slot.status }}">
+            <div class="slot-number">{{ slot.slot_number }}</div>
+            <div class="slot-status-label">{{ slot.status | capitalize }}</div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <p class="fs-sm text-muted mt-2 mb-0">
+          <i class="icon icon-info-circle me-1"></i>Tap a green slot to reserve it instantly.
+        </p>
+        {% else %}
+        <div class="empty-state py-3">
+          <div class="empty-icon"><i class="icon icon-grid-3x3"></i></div>
+          <p>No slots set up at this location yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<canvas id="captureCanvas" class="d-none"></canvas>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+<script src="{{ url_for('static', filename='js/slot_map.js') }}"></script>
+<script>
+const LOCATION_ID = "{{ location.id }}";
+function selectSlot(slotId, slotNumber) {
+  window.location.href = '/driver/reserve?location_id={{ location.id }}&slot_id=' + slotId;
+}
+</script>
+{% endblock %}

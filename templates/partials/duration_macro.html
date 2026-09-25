@@ -1,0 +1,8 @@
+{% macro duration(entry_time, exit_time) %}
+  {%- if entry_time and exit_time -%}
+    {%- set e = entry_time.replace(tzinfo=none) if entry_time.tzinfo else entry_time -%}
+    {%- set x = exit_time.replace(tzinfo=none)  if exit_time.tzinfo  else exit_time  -%}
+    {%- set mins = ((x - e).total_seconds() / 60) | int -%}
+    {%- if mins >= 60 -%}{{ mins // 60 }}h {{ mins % 60 }}m{%- else -%}{{ mins }} min{%- endif -%}
+  {%- else -%}—{%- endif -%}
+{% endmacro %}

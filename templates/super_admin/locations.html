@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Parking Locations{% endblock %}
+{% block page_title %}Locations{% endblock %}
+{% block breadcrumb %}
+  <span>System</span><span class="opacity-50">/</span>
+  <span class="bc-active">Parking Locations</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-geo-alt me-2 text-blue"></i>Parking Locations</h3>
+    <span class="sub-title">Manage all registered parking facilities</span>
+  </div>
+  <a href="{{ url_for('super_admin.create_location_view') }}" class="btn btn-sm btn-primary">
+    <i class="icon icon-plus-circle me-1"></i>Add Location
+  </a>
+</div>
+
+<div class="row g-3">
+  {% for loc in locations %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card {% if loc.get('is_active', True) %}border-status-green{% else %}border-status-red{% endif %}">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h6 class="font-display fw-bold mb-0">{{ loc.name }}</h6>
+          <span class="badge {% if loc.get('is_active', True) %}bg-success{% else %}bg-danger{% endif %}">
+            {{ 'Active' if loc.get('is_active', True) else 'Suspended' }}
+          </span>
+        </div>
+        <p class="fs-78 text-muted mb-2">
+          <i class="icon icon-geo-alt me-1"></i>{{ loc.address }}
+        </p>
+        <div class="d-flex gap-2 mb-3 fs-75">
+          <span class="badge bg-secondary">{{ loc.type }}</span>
+          <span class="badge bg-success">KES {{ loc.hourly_rate | int }}/hr</span>
+          <span class="badge bg-secondary">{{ loc.total_slots }} slots</span>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('super_admin.edit_location', location_id=loc.id) }}"
+             class="btn btn-outline-secondary btn-sm flex-fill">
+            <i class="icon icon-info-circle me-1"></i>Edit
+          </a>
+          <form method="POST" action="{{ url_for('super_admin.toggle_location_active', location_id=loc.id) }}"
+                class="flex-fill">
+            {% if loc.get('is_active', True) %}
+              <button type="submit" class="btn btn-outline-warning btn-sm w-100"
+                      onclick="return confirm('Suspend {{ loc.name }}? Drivers and guards will not see it.')">
+                <i class="icon icon-clock-history me-1"></i>Suspend
+              </button>
+            {% else %}
+              <button type="submit" class="btn btn-outline-success btn-sm w-100"
+                      onclick="return confirm('Reactivate {{ loc.name }}?')">
+                <i class="icon icon-arrow-right me-1"></i>Reactivate
+              </button>
+            {% endif %}
+          </form>
+        </div>
+        <form method="POST" action="{{ url_for('super_admin.delete_location_view', location_id=loc.id) }}"
+              class="mt-2">
+          <button type="submit" class="btn btn-outline-danger btn-sm w-100"
+                  onclick="return confirm('Permanently delete {{ loc.name }}? This only works if it has no sessions or reservations on record, and cannot be undone.')">
+            <i class="icon icon-exclamation-triangle me-1"></i>Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="card"><div class="card-body">
+      <div class="empty-state">
+        <div class="empty-icon"><i class="icon icon-geo-alt"></i></div>
+        <p>No locations yet. <a href="{{ url_for('super_admin.create_location_view') }}">Create your first one.</a></p>
+      </div>
+    </div></div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

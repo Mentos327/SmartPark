@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-person me-2 text-blue"></i>My Profile</h3>
+    <span class="sub-title">Account and business details</span>
+  </div>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-top-blue">
+      <div class="card-header bg-blue">
+        <h3 class="card-title"><i class="icon icon-person me-2"></i>Account & Business Details</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.profile') }}">
+          <input type="hidden" name="action" value="update_profile" />
+          <div class="mb-3">
+            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="name" value="{{ admin.name }}" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" name="email" value="{{ admin.email }}" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" name="phone" value="{{ admin.phone or '' }}" placeholder="0712 345 678" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">National ID Number</label>
+            <input type="text" class="form-control" name="national_id" value="{{ admin.national_id or '' }}" placeholder="e.g. 12345678" />
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Business Permit Number</label>
+            <input type="text" class="form-control" name="business_permit" value="{{ admin.business_permit or '' }}" placeholder="e.g. NCC/2026/123456" />
+            <div class="form-text">Your county business permit number.</div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100"><i class="icon icon-check-circle me-1"></i>Save Changes</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card border-top-yellow">
+      <div class="card-header bg-yellow">
+        <h3 class="card-title"><i class="icon icon-lock me-2"></i>Change Password</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.profile') }}">
+          <input type="hidden" name="action" value="change_password" />
+          <div class="mb-3">
+            <label class="form-label">Current Password</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="cp1" name="current_password" placeholder="Current password" required />
+              <button type="button" class="btn btn-outline-secondary" onclick="togglePwd('cp1','e1')" tabindex="-1"><i class="icon icon-eye" id="e1"></i></button>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">New Password</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="cp2" name="new_password" placeholder="Min 6 characters" required minlength="6" />
+              <button type="button" class="btn btn-outline-secondary" onclick="togglePwd('cp2','e2')" tabindex="-1"><i class="icon icon-eye" id="e2"></i></button>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Confirm New Password</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="cp3" name="confirm_password" placeholder="Repeat password" required />
+              <button type="button" class="btn btn-outline-secondary" onclick="togglePwd('cp3','e3')" tabindex="-1"><i class="icon icon-eye" id="e3"></i></button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-warning w-100"><i class="icon icon-lock me-1"></i>Change Password</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

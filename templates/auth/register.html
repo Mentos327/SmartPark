@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Register — smart.park{% endblock %}
+
+{% block auth_content %}
+<div class="auth-page">
+  <div class="auth-box max-w-460">
+    <div class="auth-box-header bg-green">
+      <div class="auth-logo"><i class="icon icon-person-badge"></i></div>
+      <h3>Create Driver Account</h3>
+      <p>Reserve slots and track your parking history</p>
+    </div>
+
+    <div class="auth-box-body">
+      {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible">
+          {{ message }}<button type="button" class="alert-dismiss-btn" aria-label="Close">&times;</button>
+        </div>
+      {% endfor %}
+
+      <form method="POST" action="{{ url_for('auth.register') }}">
+        <div class="mb-3">
+          <label for="name" class="form-label">Full Name</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="icon icon-person"></i></span>
+            <input type="text" class="form-control" id="name" name="name"
+                   placeholder="Jane Wanjiku" required />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="email" class="form-label">Email Address</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="icon icon-envelope"></i></span>
+            <input type="email" class="form-control" id="email" name="email"
+                   placeholder="jane@example.com" required />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="icon icon-lock"></i></span>
+            <input type="password" class="form-control" id="password" name="password"
+                   placeholder="At least 6 characters" required />
+            <button type="button" class="btn btn-outline-secondary"
+                    onclick="togglePwd('password','eyeP')" tabindex="-1">
+              <i class="icon icon-eye" id="eyeP"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mb-4">
+          <label for="confirm_password" class="form-label">Confirm Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="icon icon-lock"></i></span>
+            <input type="password" class="form-control" id="confirm_password"
+                   name="confirm_password" placeholder="Repeat password" required />
+            <button type="button" class="btn btn-outline-secondary"
+                    onclick="togglePwd('confirm_password','eyeC')" tabindex="-1">
+              <i class="icon icon-eye" id="eyeC"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100 py-2">
+          <i class="icon icon-person-badge me-2"></i>Create Account
+        </button>
+      </form>
+    </div>
+
+    <div class="auth-box-footer">
+      Already have an account? <a href="{{ url_for('auth.login') }}">Log in &rarr;</a>
+      <div class="mt-2">
+        <a href="{{ url_for('auth.index') }}" class="text-muted no-underline fs-85">
+          <i class="icon icon-arrow-left me-1"></i>Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

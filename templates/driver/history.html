@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Parking History{% endblock %}
+{% block page_title %}History{% endblock %}
+{% from "partials/duration_macro.html" import duration %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-clock-history me-2 text-navy"></i>My Parking History</h3>
+    <span class="sub-title">Past parking sessions and receipts</span>
+  </div>
+  <a href="{{ url_for('driver.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-header bg-dark">
+    <h3 class="card-title"><i class="icon icon-grid-3x3 me-2"></i>Session History</h3>
+    <span class="badge bg-light text-dark">{{ sessions | length }} sessions</span>
+  </div>
+  <div class="card-body p-0">
+    {% if sessions %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Plate</th>
+            <th>Entry (EAT)</th>
+            <th>Exit (EAT)</th>
+            <th>Duration</th>
+            <th>Fee (KES)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sessions %}
+          <tr>
+            <td><strong>{{ s.plate_number }}</strong></td>
+            <td class="fs-82">{{ s.entry_time | eat_time }}</td>
+            <td class="fs-82">{{ s.exit_time | eat_time if s.exit_time else '—' }}</td>
+            <td class="fs-82">{{ duration(s.entry_time, s.exit_time) }}</td>
+            <td><strong>{{ s.fee_kes | int if s.fee_kes else '—' }}</strong></td>
+            <td>
+              {% if s.status == 'active' %}
+                <span class="badge badge-reserved">Active</span>
+              {% else %}
+                <span class="badge badge-available">Completed</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="icon icon-clock-history"></i></div>
+      <p>No parking sessions recorded yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

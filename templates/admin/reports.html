@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block title %}Reports — {{ location.name if location }}{% endblock %}
+{% block page_title %}Revenue Reports{% endblock %}
+{% block breadcrumb %}
+  <span>{{ location.name if location }}</span>
+  <span class="opacity-50">/</span>
+  <span class="bc-active">Reports</span>
+{% endblock %}
+{% from "partials/duration_macro.html" import duration %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-cash me-2 text-blue"></i>Revenue Reports</h3>
+    <span class="sub-title">{{ location.name if location }} — Financial analytics and session history</span>
+  </div>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="info-box">
+      <div class="info-box-icon bg-blue"><i class="icon icon-cash"></i></div>
+      <div class="info-box-content">
+        <span class="info-box-text">Total Sessions</span>
+        <span class="info-box-number">{{ total_vehicles }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="info-box">
+      <div class="info-box-icon bg-green"><i class="icon icon-cash"></i></div>
+      <div class="info-box-content">
+        <span class="info-box-text">Total Revenue</span>
+        <span class="info-box-number">KES {{ total_revenue | int }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="info-box">
+      <div class="info-box-icon bg-navy"><i class="icon icon-cash"></i></div>
+      <div class="info-box-content">
+        <span class="info-box-text">Cash Revenue</span>
+        <span class="info-box-number">KES {{ cash_revenue | int }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="info-box">
+      <div class="info-box-icon bg-green bg-green"><i class="icon icon-phone"></i></div>
+      <div class="info-box-content">
+        <span class="info-box-text">M-Pesa Revenue</span>
+        <span class="info-box-number">KES {{ mpesa_revenue | int }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header bg-blue">
+        <h3 class="card-title"><i class="icon icon-cash me-2"></i>Daily Revenue — Last 7 Days (KES)</h3>
+      </div>
+      <div class="card-body">
+        <canvas id="dailyChart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header bg-green">
+        <h3 class="card-title"><i class="icon icon-cash me-2"></i>Payment Methods</h3>
+      </div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center">
+        <canvas id="paymentChart" class="media-square-sm"></canvas>
+        <div class="mt-3 text-center fs-78 text-muted">
+          Cash: <strong>{{ cash_count }}</strong> sessions &bull; M-Pesa: <strong>{{ mpesa_count }}</strong> sessions
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if guard_activity %}
+<div class="card">
+  <div class="card-header bg-navy">
+    <h3 class="card-title"><i class="icon icon-person-badge me-2"></i>Guard Activity</h3>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr><th>Guard Name</th><th>Check-ins</th><th>Check-outs</th></tr>
+        </thead>
+        <tbody>
+          {% for g in guard_activity %}
+          <tr>
+            <td><strong>{{ g.name }}</strong></td>
+            <td><span class="badge bg-primary">{{ g.check_in }}</span></td>
+            <td><span class="badge bg-success">{{ g.check_out }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if email_failures %}
+<div class="card">
+  <div class="card-header bg-yellow">
+    <h3 class="card-title"><i class="icon icon-envelope me-2"></i>Email Delivery Failures (last 10)</h3>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead><tr><th>When</th><th>Recipient</th><th>Subject</th><th>Error</th></tr></thead>
+        <tbody>
+          {% for f in email_failures %}
+          <tr>
+            <td class="fs-78 text-muted">{{ f.failed_at | eat_time }}</td>
+            <td class="fs-82">{{ f.to }}</td>
+            <td class="fs-82">{{ f.subject }}</td>
+            <td class="fs-78 text-danger">{{ f.error[:80] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if rate_history %}
+<div class="card">
+  <div class="card-header bg-dark">
+    <h3 class="card-title"><i class="icon icon-clock-history me-2"></i>Rate Change History</h3>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead><tr><th>Date</th><th>Old Rate (KES/hr)</th><th>New Rate (KES/hr)</th></tr></thead>
+        <tbody>
+          {% for log in rate_history %}
+          <tr>
+            <td class="fs-78 text-muted">{{ log.timestamp | eat_time }}</td>
+            <td>{{ log.details.get('old_rate', '—') | int }}</td>
+            <td><strong>{{ log.details.get('new_rate', '—') | int }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- All Sessions -->
+<div class="card">
+  <div class="card-header bg-dark">
+    <h3 class="card-title"><i class="icon icon-grid-3x3 me-2"></i>Session History (last 50)</h3>
+    <span class="fs-75">KPI totals cover last 200 sessions</span>
+  </div>
+  <div class="card-body p-0">
+    {% if sessions %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Receipt</th>
+            <th>Plate</th>
+            <th>Entry (EAT)</th>
+            <th>Exit (EAT)</th>
+            <th>Duration</th>
+            <th>Fee (KES)</th>
+            <th>Payment</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sessions %}
+          <tr>
+            <td class="fs-sm text-muted">{{ s.receipt_number if s.receipt_number else '—' }}</td>
+            <td><strong>{{ s.plate_number }}</strong></td>
+            <td class="fs-82">{{ s.entry_time | eat_time }}</td>
+            <td class="fs-82">{{ s.exit_time | eat_time if s.exit_time else '—' }}</td>
+            <td class="fs-82">{{ duration(s.entry_time, s.exit_time) }}</td>
+            <td><strong>{{ s.fee_kes | int if s.fee_kes else '—' }}</strong></td>
+            <td>
+              {% if s.payment_method == 'mpesa' %}
+                <span class="badge badge-mpesa"><i class="icon icon-phone me-1"></i>M-Pesa</span>
+              {% elif s.payment_method == 'cash' %}
+                <span class="badge badge-cash"><i class="icon icon-cash me-1"></i>Cash</span>
+              {% elif s.payment_method %}
+                <span class="badge bg-secondary">{{ s.payment_method | upper }}</span>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="icon icon-info-circle"></i></div>
+      <p>No sessions recorded yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+var dailyLabels  = {{ daily_labels | tojson }};
+var dailyRevenue = {{ daily_revenue | tojson }};
+new Chart(document.getElementById('dailyChart'),{
+  type:'bar',
+  data:{
+    labels:dailyLabels,
+    datasets:[{label:'Revenue (KES)',data:dailyRevenue,
+      backgroundColor:'rgba(52,152,219,0.7)',borderColor:'rgba(52,152,219,1)',
+      borderWidth:1,borderRadius:6}]
+  },
+  options:{responsive:true,plugins:{legend:{display:false}},
+    scales:{y:{beginAtZero:true,ticks:{callback:function(v){return 'KES '+v;}}}}}
+});
+new Chart(document.getElementById('paymentChart'),{
+  type:'doughnut',
+  data:{
+    labels:['Cash','M-Pesa'],
+    datasets:[{data:[{{ cash_count }},{{ mpesa_count }}],
+      backgroundColor:['#6c757d','#00a65a'],borderWidth:0}]
+  },
+  options:{responsive:true,plugins:{legend:{position:'bottom'}}}
+});
+</script>
+{% endblock %}

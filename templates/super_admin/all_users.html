@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}All Users{% endblock %}
+{% block page_title %}All Users{% endblock %}
+{% block breadcrumb %}
+  <span>System</span><span class="opacity-50">/</span>
+  <span class="bc-active">All Users</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-person-badge me-2 text-navy"></i>All Users</h3>
+    <span class="sub-title">Every account in the system — super admins, location admins, guards, and drivers</span>
+  </div>
+</div>
+
+<!-- Role summary -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card h-100">
+      <div class="card-body text-center">
+        <div class="fs-78 text-muted label-eyebrow">Super Admins</div>
+        <div class="fs-24 fw-bold font-display">{{ role_counts.super_admin }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card h-100">
+      <div class="card-body text-center">
+        <div class="fs-78 text-muted label-eyebrow">Location Admins</div>
+        <div class="fs-24 fw-bold font-display">{{ role_counts.admin }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card h-100">
+      <div class="card-body text-center">
+        <div class="fs-78 text-muted label-eyebrow">Guards</div>
+        <div class="fs-24 fw-bold font-display">{{ role_counts.guard }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card h-100">
+      <div class="card-body text-center">
+        <div class="fs-78 text-muted label-eyebrow">Drivers</div>
+        <div class="fs-24 fw-bold font-display">{{ role_counts.driver }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-header bg-dark">
+    <h3 class="card-title"><i class="icon icon-search me-2"></i>Filter Users</h3>
+  </div>
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('super_admin.all_users') }}" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Role</label>
+        <select name="role" class="form-select form-select-sm">
+          <option value="">All Roles</option>
+          <option value="super_admin" {{ 'selected' if role_filter == 'super_admin' }}>Super Admin</option>
+          <option value="admin"       {{ 'selected' if role_filter == 'admin' }}>Location Admin</option>
+          <option value="guard"       {{ 'selected' if role_filter == 'guard' }}>Guard</option>
+          <option value="driver"      {{ 'selected' if role_filter == 'driver' }}>Driver</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Location</label>
+        <select name="location" class="form-select form-select-sm">
+          <option value="">All Locations</option>
+          {% for loc in locations %}
+          <option value="{{ loc.id }}" {{ 'selected' if location_filter == loc.id | string }}>{{ loc.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="icon icon-search me-1"></i>Filter</button>
+        <a href="{{ url_for('super_admin.all_users') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Users table -->
+<div class="card">
+  <div class="card-header bg-navy">
+    <h3 class="card-title"><i class="icon icon-grid-3x3 me-2"></i>Users</h3>
+    <span class="badge bg-light text-dark">{{ users | length }} account{{ 's' if users | length != 1 }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if users %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Location</th>
+            <th>Phone</th>
+            <th>Joined</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="guard-avatar me-2 {% if u.role == 'super_admin' %}bg-navy{% elif u.role == 'admin' %}bg-blue{% elif u.role == 'guard' %}bg-success{% else %}bg-secondary{% endif %}">
+                  {{ (u.name or '?')[0] | upper }}
+                </div>
+                <strong class="fs-85">{{ u.name or 'Unnamed' }}</strong>
+              </div>
+            </td>
+            <td class="fs-85">{{ u.email or '—' }}</td>
+            <td>
+              <span class="badge {% if u.role == 'guard' %}bg-success{% elif u.role == 'admin' %}bg-warning text-dark{% elif u.role == 'super_admin' %}bg-primary{% else %}bg-secondary{% endif %}">
+                {{ u.role | replace('_', ' ') | title }}
+              </span>
+            </td>
+            <td class="fs-85">
+              {% if u.location_name %}{{ u.location_name }}{% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td class="fs-85">{{ u.phone if u.phone else '—' }}</td>
+            <td class="fs-78 text-muted">{% if u.joined_at %}{{ u.joined_at | eat_time }}{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="icon icon-person-badge"></i></div>
+      <p>No users match the selected filters.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

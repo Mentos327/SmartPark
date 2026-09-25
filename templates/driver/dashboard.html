@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Find Parking — smart.park{% endblock %}
+{% block page_title %}Find Parking{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-geo-alt me-2 text-blue"></i>Find Parking</h3>
+    <span class="sub-title">Welcome back, {{ current_user.name.split(' ')[0] }} — Browse available locations</span>
+  </div>
+  <a href="{{ url_for('driver.reserve') }}" class="btn btn-sm btn-danger btn-brand">
+    <i class="icon icon-plus-circle me-1"></i>New Booking
+  </a>
+</div>
+
+{% if active_session %}
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+  <i class="icon icon-car-front fs-5"></i>
+  <span><strong>{{ active_session.plate_number }}</strong> is currently parked. Check your reservations for details.</span>
+</div>
+{% endif %}
+
+<!-- Locations -->
+<div class="card">
+  <div class="card-header bg-navy">
+    <h3 class="card-title"><i class="icon icon-geo-alt me-2"></i>Available Parking Locations</h3>
+    <span class="badge bg-light text-dark">{{ locations | length }} location{{ 's' if locations | length != 1 }}</span>
+  </div>
+  <div class="card-body">
+    {% if locations %}
+    <div class="row g-3">
+      {% for loc in locations %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card mb-0 h-100 border-status-blue card-hover-lift">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="font-display text-navy mb-0 fs-90">{{ loc.name }}</h6>
+              <span class="badge bg-secondary fs-xs">{{ loc.type | replace('_', ' ') | title }}</span>
+            </div>
+            <p class="fs-78 text-muted mb-2">
+              <i class="icon icon-geo-alt me-1"></i>{{ loc.address }}, {{ loc.county }}
+            </p>
+            {% if loc.slot_summary is defined %}
+            <div class="d-flex gap-3 mb-3 fs-78">
+              <span class="text-success fw-bold"><i class="icon icon-info-circle me-1 dot-sep"></i>{{ loc.slot_summary.available }} available</span>
+              <span class="text-danger fw-bold"><i class="icon icon-info-circle me-1 dot-sep"></i>{{ loc.slot_summary.occupied }} occupied</span>
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fs-80 text-muted fw-bold">
+                <i class="icon icon-cash me-1"></i>KES {{ loc.hourly_rate | int }}/hr
+              </span>
+              <a href="{{ url_for('driver.location_detail', location_id=loc.id) }}" class="btn btn-sm btn-primary">
+                <i class="icon icon-eye me-1"></i>View & Book
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="icon icon-geo-alt"></i></div>
+      <p>No parking locations available at this time.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

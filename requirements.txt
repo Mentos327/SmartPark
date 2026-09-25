@@ -1,0 +1,25 @@
+# smart.park — pure Python dependencies
+#
+# Removed entirely (replaced by Python standard library — see README.md):
+#   Flask            -> http.server.ThreadingHTTPServer + core/router.py
+#   Flask-SQLAlchemy -> sqlite3 (database/db.py)
+#   flask-login      -> auth/session_manager.py + auth/decorators.py
+#   flask-bcrypt     -> hashlib.pbkdf2_hmac (utils/security.py)
+#   Flask-Mail       -> smtplib (services/email.py)
+#   python-dotenv    -> a ~10-line loader in config.py (not a framework,
+#                       just no longer worth a dependency for 10 lines)
+#
+# Kept — none of these are Flask or a Flask extension, they are
+# independent libraries used for templating, OCR, and HTTP client needs:
+
+jinja2          # templating engine for the 41 existing .html templates
+                # (Flask depends on Jinja2 — Jinja2 does not depend on Flask)
+Pillow          # image handling for OCR plate scanning
+requests        # outbound HTTP client: CCTV stream proxy + M-Pesa Daraja API calls
+easyocr         # OCR plate scanning — optional but recommended.
+                # If not installed, the camera scan page falls back to manual plate entry.
+numpy           # required by easyocr for image array handling
+
+# Testing only — not needed to run the app itself, only to run the
+# automated tests in tests/ (see tests/README.md).
+pytest

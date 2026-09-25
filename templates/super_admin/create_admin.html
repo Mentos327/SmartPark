@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Add Location Admin{% endblock %}
+{% block page_title %}Add Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-person-badge me-2 text-blue"></i>Add Location Admin</h3>
+    <span class="sub-title">Create an admin account for a parking location</span>
+  </div>
+  <a href="{{ url_for('super_admin.admins') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Admins
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-top-blue">
+      <div class="card-header bg-blue">
+        <h3 class="card-title"><i class="icon icon-person-badge me-2"></i>Admin Account Details</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('super_admin.create_admin') }}">
+          <div class="mb-3">
+            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="name" placeholder="Jane Wanjiku" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" name="email" placeholder="jane@example.com" required />
+            <div class="form-text">Used to log in to the admin dashboard.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password <span class="text-danger">*</span></label>
+            <input type="password" class="form-control" name="password" placeholder="Minimum 6 characters" required minlength="6" />
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Assign to Parking Location <span class="text-danger">*</span></label>
+            <select class="form-select" name="location_id" required>
+              <option value="">— Select a location —</option>
+              {% for loc in locations %}
+              <option value="{{ loc.id }}">{{ loc.name }} — {{ loc.county }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">The admin will only see data for this location.</div>
+          </div>
+          <div class="divider"></div>
+          <p class="fs-78 text-muted mb-2">Owner / business details (optional but recommended)</p>
+          <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" name="phone" placeholder="0712 345 678" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">National ID Number</label>
+            <input type="text" class="form-control" name="national_id" placeholder="e.g. 12345678" />
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Business Permit Number</label>
+            <input type="text" class="form-control" name="business_permit" placeholder="e.g. NCC/2026/123456" />
+            <div class="form-text">Nairobi City Council or county business permit number.</div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="icon icon-person-badge me-1"></i>Create Admin Account
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

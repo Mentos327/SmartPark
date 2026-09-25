@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Slot Map — {{ location.name if location }}{% endblock %}
+{% block page_title %}Slot Map{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-grid-3x3 me-2 text-navy"></i>{{ location.name if location }}</h3>
+    <span class="sub-title">Live slot availability and camera view</span>
+  </div>
+  <a href="{{ url_for('guard.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+
+<div class="content-max">
+<div class="row g-4">
+  <!-- Camera -->
+  <div class="col-md-7">
+    {% if location and location.camera_url %}
+    <div class="card">
+      <div class="card-header bg-dark">
+        <h3 class="card-title"><i class="icon icon-camera me-2"></i>Live CCTV — {{ location.name }}</h3>
+        <span class="badge bg-success">Live</span>
+      </div>
+      <div class="card-body p-0 video-frame-sm">
+        <img src="{{ url_for('api.proxy_stream', location_id=location.id) }}"
+             class="w-100 media-h-320 media-cover"
+             alt="Live parking lot camera"
+             onerror="this.alt='Camera feed unavailable.';" />
+      </div>
+    </div>
+    <div class="alert alert-success mt-3 fs-82">
+      <i class="icon icon-camera me-1"></i>Live camera feed of {{ location.name }}.
+    </div>
+
+    {% else %}
+    <div class="card">
+      <div class="card-header bg-dark">
+        <h3 class="card-title"><i class="icon icon-camera me-2"></i>Device Camera</h3>
+        <span id="cameraStatus" class="badge bg-danger">Camera Off</span>
+      </div>
+      <div class="card-body p-0 video-frame">
+        <video id="cameraFeed" playsinline muted class="w-100 rounded media-h-300 media-cover"></video>
+      </div>
+      <div class="card-footer d-flex gap-2">
+        <button id="btnStartCamera" class="btn btn-success flex-grow-1" onclick="startCamera()">
+          <i class="icon icon-arrow-right me-1"></i>Start Camera
+        </button>
+        <button id="btnStop" class="btn btn-secondary" onclick="stopCamera()" disabled>
+          <i class="icon icon-exclamation-circle me-1"></i>Stop
+        </button>
+      </div>
+    </div>
+    <div class="alert alert-info mt-3 fs-82">
+      <i class="icon icon-info-circle me-1"></i>Point at the lot to check conditions. Slot grid updates every 30 seconds.
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right: Summary + Slot Grid -->
+  <div class="col-md-5">
+    <!-- Summary Card -->
+    <div class="card mb-3">
+      <div class="card-header bg-navy">
+        <h3 class="card-title"><i class="icon icon-cash me-2"></i>Availability Now</h3>
+      </div>
+      <div class="card-body">
+        <div class="row g-2 text-center">
+          <div class="col-6">
+            <div class="p-2 rounded bg-tint-green">
+              <div class="summary-available stat-figure-lg green">{{ slot_summary.available }}</div>
+              <div class="eyebrow eyebrow-green">Available</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-2 rounded bg-tint-red">
+              <div class="summary-occupied stat-figure-lg red">{{ slot_summary.occupied }}</div>
+              <div class="eyebrow eyebrow-red">Occupied</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-2 rounded bg-tint-yellow">
+              <div class="summary-reserved stat-figure-lg yellow">{{ slot_summary.reserved }}</div>
+              <div class="eyebrow eyebrow-yellow">Reserved</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-2 rounded bg-tint-gray">
+              <div class="stat-figure-lg gray">{{ slot_summary.disabled }}</div>
+              <div class="label-eyebrow">Closed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slot Grid Card -->
+    <div class="card">
+      <div class="card-header bg-dark">
+        <h3 class="card-title"><i class="icon icon-grid-3x3 me-2"></i>Slot Layout</h3>
+        <div class="slot-legend">
+          <div class="slot-legend-item"><span class="slot-legend-dot available"></span>Avail</div>
+          <div class="slot-legend-item"><span class="slot-legend-dot occupied"></span>Occ</div>
+          <div class="slot-legend-item"><span class="slot-legend-dot reserved"></span>Res</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="slot-grid" id="slotGrid">
+          <p class="fs-80 text-muted">Loading slots...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- /content-max -->
+
+<canvas id="captureCanvas" class="d-none"></canvas>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+<script src="{{ url_for('static', filename='js/slot_map.js') }}"></script>
+<script>
+var LOCATION_ID = "{{ location.id if location else '' }}";
+
+// slot_map.js expects each slot to have `label` and `aisle`; the API
+// returns `slot_number` and `level` instead, so remap before handing
+// the data to SlotMap.
+function toSlotMapShape(apiSlots) {
+  return apiSlots.map(function (s) {
+    return {
+      id: s.id,
+      label: s.slot_number,
+      aisle: s.level,
+      status: s.status,
+    };
+  });
+}
+
+function updateSummary(summary) {
+  var availEl = document.querySelector(".summary-available");
+  var occEl = document.querySelector(".summary-occupied");
+  var resEl = document.querySelector(".summary-reserved");
+  if (availEl) availEl.textContent = summary.available || 0;
+  if (occEl) occEl.textContent = summary.occupied || 0;
+  if (resEl) resEl.textContent = summary.reserved || 0;
+}
+
+function loadSlots() {
+  if (!LOCATION_ID) return;
+  fetch("/api/slots/" + LOCATION_ID)
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var grid = document.getElementById("slotGrid");
+      if (!d.slots || !d.slots.length) {
+        grid.innerHTML = '<p class="fs-80 text-muted">No slots configured for this location yet.</p>';
+        return;
+      }
+      SlotMap.init("slotGrid", toSlotMapShape(d.slots));
+      if (d.summary) updateSummary(d.summary);
+    })
+    .catch(function () {
+      var grid = document.getElementById("slotGrid");
+      grid.innerHTML = '<p class="fs-80 text-danger">Could not load slots. Retrying...</p>';
+    });
+}
+
+loadSlots();
+setInterval(loadSlots, 30000);
+</script>
+{% endblock %}

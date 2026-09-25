@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Create Location{% endblock %}
+{% block page_title %}New Location{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-geo-alt me-2 text-blue"></i>New Parking Location</h3>
+    <span class="sub-title">Register a new parking facility in the system</span>
+  </div>
+  <a href="{{ url_for('super_admin.locations') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Locations
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-top-blue">
+      <div class="card-header bg-blue">
+        <h3 class="card-title"><i class="icon icon-geo-alt me-2"></i>Location Details</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('super_admin.create_location_view') }}">
+          <div class="mb-3">
+            <label class="form-label">Location Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="name" placeholder="e.g. Garden City Mall" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Address <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="address" placeholder="e.g. Thika Road, Nairobi" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">County <span class="text-danger">*</span></label>
+            <select class="form-select" name="county" required>
+              <option value="">Select county...</option>
+              {% for county in counties %}
+              <option value="{{ county }}">{{ county }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Drivers can search for parking locations by county.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select class="form-select" name="type">
+              <option value="mall">Mall</option>
+              <option value="hotel">Hotel</option>
+              <option value="school">School</option>
+              <option value="bus_stage">Bus Stage</option>
+              <option value="public">Public</option>
+            </select>
+          </div>
+          <div class="row g-3 mb-4">
+            <div class="col-6">
+              <label class="form-label">Total Slots</label>
+              <input type="number" class="form-control" name="total_slots" placeholder="20" min="0" />
+              <div class="form-text">Optional estimate. The admin adds individual slots later.</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Hourly Rate (KES) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" name="hourly_rate" value="30" min="5" step="5" required />
+              <div class="form-text">Admin can update this later.</div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="icon icon-plus-circle me-1"></i>Create Location
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

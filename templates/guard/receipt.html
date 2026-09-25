@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Receipt — {{ session.plate_number }}{% endblock %}
+{% block page_title %}Receipt{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+  <div>
+    <h3><i class="icon icon-cash me-2 text-green"></i>Parking Receipt</h3>
+    <span class="sub-title">{{ location.name if location }} — Vehicle checkout summary</span>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('guard.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="icon icon-arrow-left me-1"></i>Dashboard
+    </a>
+    <button onclick="window.print()" class="btn btn-sm btn-primary">
+      <i class="icon icon-cash me-1"></i>Print Receipt
+    </button>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-5 col-lg-4">
+    <div class="receipt-box">
+      <div class="receipt-header">
+        <div class="fs-110 heading-display tracked">smart.park</div>
+        <div class="fs-82 text-muted">{{ location.name if location }}</div>
+        <div class="fs-78 text-muted">{{ location.address if location }}</div>
+        <div class="fs-78 text-muted">{{ location.county if location }} County</div>
+        <div class="divider"></div>
+        <div class="text-label">PARKING RECEIPT</div>
+        <div class="fs-78 text-muted">{{ session.receipt_number }}</div>
+      </div>
+
+      <div class="receipt-row">
+        <span class="label">Vehicle</span>
+        <span class="value tracked fs-100">{{ session.plate_number }}</span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">Slot</span>
+        <span class="value">{{ session.slot_number or 'N/A' }}</span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">Entry (EAT)</span>
+        <span class="value">{{ session.entry_time | eat_time }}</span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">Exit (EAT)</span>
+        <span class="value">{{ session.exit_time | eat_time }}</span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">Duration</span>
+        <span class="value">{{ duration_display }}</span>
+      </div>
+
+      <div class="receipt-row">
+        <span class="label">Rate</span>
+        <span class="value">KES {{ hourly_rate_kes | int }}/hr</span>
+      </div>
+
+      <div class="receipt-row receipt-total">
+        <span>TOTAL PAID</span>
+        <span>KES {{ session.fee_kes | int }}</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="receipt-row">
+        <span class="label">Payment</span>
+        <span class="value">
+          {% if session.payment_method == 'mpesa' %}
+            <span class="badge badge-mpesa"><i class="icon icon-phone me-1"></i>M-Pesa</span>
+            {% if session.mpesa_code %}
+            <br><small class="text-muted">{{ session.mpesa_code }}</small>
+            {% endif %}
+          {% else %}
+            <span class="badge badge-cash"><i class="icon icon-cash me-1"></i>Cash</span>
+          {% endif %}
+        </span>
+      </div>
+
+      {% if session.guard_name %}
+      <div class="receipt-row">
+        <span class="label">Guard</span>
+        <span class="value">{{ session.guard_name }}</span>
+      </div>
+      {% endif %}
+
+      <div class="text-center mt-3 fs-sm text-muted">
+        Thank you for parking with us. Drive safely!<br>
+        Generated: {{ now.strftime('%d %b %Y, %H:%M') }} EAT
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Edit Admin{% endblock %}
+{% block page_title %}Edit Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-person-badge me-2 text-blue"></i>Edit Location Admin</h3>
+    <span class="sub-title">Update details for {{ admin.name }}</span>
+  </div>
+  <a href="{{ url_for('super_admin.admins') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Admins
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-top-blue">
+      <div class="card-header bg-blue">
+        <h3 class="card-title"><i class="icon icon-person-badge me-2"></i>Admin Account Details</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('super_admin.edit_admin', admin_id=admin.id) }}">
+          <div class="mb-3">
+            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="name" value="{{ admin.name }}" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" name="email" value="{{ admin.email or '' }}" required />
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Assigned Parking Location <span class="text-danger">*</span></label>
+            <select class="form-select" name="location_id" required>
+              <option value="">— Select a location —</option>
+              {% for loc in locations %}
+              <option value="{{ loc.id }}" {% if loc.id | string == admin.location_id | string %}selected{% endif %}>
+                {{ loc.name }} — {{ loc.county }}
+              </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Reassigning moves this admin to manage a different location.</div>
+          </div>
+          <div class="divider"></div>
+          <p class="fs-78 text-muted mb-2">Owner / business details</p>
+          <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" name="phone" value="{{ admin.phone or '' }}" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">National ID Number</label>
+            <input type="text" class="form-control" name="national_id" value="{{ admin.national_id or '' }}" />
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Business Permit Number</label>
+            <input type="text" class="form-control" name="business_permit" value="{{ admin.business_permit or '' }}" />
+          </div>
+          <div class="form-text mb-3">
+            To reset this admin's password, use "Remove Admin" and re-add them, or ask them to use
+            "Forgot password" on the login page.
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="icon icon-check-circle me-1"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

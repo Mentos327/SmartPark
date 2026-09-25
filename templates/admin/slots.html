@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Manage Slots{% endblock %}
+{% block page_title %}Manage Slots{% endblock %}
+{% block breadcrumb %}
+  <span>{{ location.name if location }}</span>
+  <span class="opacity-50">/</span>
+  <span class="bc-active">Slots</span>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-grid-3x3 me-2 text-blue"></i>Manage Slots</h3>
+    <span class="sub-title">{{ location.name if location }} — Create, configure and arrange parking slots</span>
+  </div>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="slotTabs">
+  <li class="nav-item">
+    <button class="nav-link active" onclick="showTab('list')">
+      <i class="icon icon-grid-3x3 me-1"></i>Slot List
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" onclick="showTab('layout')">
+      <i class="icon icon-grid-3x3 me-1"></i>Arrange Layout
+    </button>
+  </li>
+</ul>
+
+<!-- Slot List Tab -->
+<div id="tab-list">
+  <!-- Add Slot Form -->
+  <div class="card mb-4 border-top-green">
+    <div class="card-header bg-green">
+      <h3 class="card-title"><i class="icon icon-plus-circle me-2"></i>Add New Slot</h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('admin.create_slot_view') }}" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Slot Number / Name</label>
+          <input type="text" class="form-control" name="slot_number" placeholder="e.g. A1, B3, 12" required />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Level</label>
+          <input type="text" class="form-control" name="level" placeholder="e.g. G, 1, 2, B1, Roof" value="G" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Type</label>
+          <select class="form-select" name="slot_type">
+            <option value="standard">Standard</option>
+            <option value="disabled">Disabled / Accessible</option>
+            <option value="vip">VIP</option>
+            <option value="motorbike">Motorbike</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-success w-100">
+            <i class="icon icon-plus-circle me-1"></i>Add Slot
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Slot Table -->
+  <div class="card">
+    <div class="card-header bg-dark">
+      <h3 class="card-title"><i class="icon icon-grid-3x3 me-2"></i>All Slots</h3>
+      <span class="badge bg-light text-dark">{{ slots | length }} slot{{ 's' if slots | length != 1 }}</span>
+    </div>
+    <div class="card-body p-0">
+      {% if slots %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Slot</th>
+              <th>Level</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for slot in slots %}
+            <tr>
+              <td><strong>{{ slot.slot_number }}</strong></td>
+              <td><span class="badge bg-secondary">{{ slot.level if slot.level else 'G' }}</span></td>
+              <td class="fs-85">{{ slot.type | capitalize }}</td>
+              <td>
+                <span class="badge
+                  {% if slot.status == 'available' %}badge-available
+                  {% elif slot.status == 'occupied' %}badge-occupied
+                  {% elif slot.status == 'reserved' %}badge-reserved
+                  {% else %}badge-disabled{% endif %}">
+                  {{ slot.status | capitalize }}
+                </span>
+              </td>
+              <td>
+                <form method="POST" action="{{ url_for('admin.update_slot', slot_id=slot.id) }}" class="d-inline">
+                  {% if slot.status == 'disabled' %}
+                  <input type="hidden" name="status" value="available" />
+                  <button class="btn btn-sm btn-outline-success"><i class="icon icon-check-circle me-1"></i>Enable</button>
+                  {% else %}
+                  <input type="hidden" name="status" value="disabled" />
+                  <button class="btn btn-sm btn-outline-secondary"><i class="icon icon-exclamation-circle me-1"></i>Disable</button>
+                  {% endif %}
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon"><i class="icon icon-grid-3x3"></i></div>
+        <p>No slots yet. Add your first slot above.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Arrange Layout Tab -->
+<div id="tab-layout" class="d-none">
+  <div class="card">
+    <div class="card-header bg-navy">
+      <h3 class="card-title"><i class="icon icon-grid-3x3 me-2"></i>Arrange Slot Order</h3>
+      <span id="saveStatus" class="badge bg-success d-none"><i class="icon icon-check-circle me-1"></i>Saved</span>
+    </div>
+    <div class="card-body">
+      <p class="fs-82 text-muted">
+        Use the arrows to move slots up or down within their level. This order is what guards and drivers see on the map.
+      </p>
+      <div id="levelSections"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var LOCATION_ID="{{ location.id }}";
+var SLOT_DATA=[
+  {% for slot in slots %}
+  {id:"{{ slot.id }}",slot_number:"{{ slot.slot_number }}",level:"{{ slot.level if slot.level else 'G' }}",status:"{{ slot.status }}",type:"{{ slot.type }}"},
+  {% endfor %}
+];
+function showTab(n){
+  document.getElementById('tab-list').style.display=n==='list'?'':'none';
+  document.getElementById('tab-layout').style.display=n==='layout'?'':'none';
+  document.querySelectorAll('#slotTabs .nav-link').forEach(function(b,i){b.classList.toggle('active',i===(n==='list'?0:1));});
+  if(n==='layout'&&!window.layoutBuilt){window.layoutBuilt=true;buildLayout();}
+}
+function buildLayout(){
+  var c=document.getElementById('levelSections');c.innerHTML='';
+  var levels={};
+  SLOT_DATA.forEach(function(s){var l=s.level||'G';if(!levels[l])levels[l]=[];levels[l].push(s);});
+  Object.keys(levels).sort().forEach(function(lvl){
+    var h=document.createElement('div');h.className='level-heading';h.textContent='Level '+lvl;c.appendChild(h);
+    var d=document.createElement('div');d.id='level-'+lvl;c.appendChild(d);
+    levels[lvl].forEach(function(s){d.appendChild(makeRow(s,lvl));});
+  });
+}
+function makeRow(slot,lvl){
+  var row=document.createElement('div');row.className='slot-order-row';row.dataset.id=slot.id;row.dataset.lvl=lvl;
+  var n=document.createElement('span');n.className='slot-name';n.textContent=slot.slot_number;row.appendChild(n);
+  if(slot.type!=='standard'){var t=document.createElement('span');t.className='slot-type-label';t.textContent=slot.type;row.appendChild(t);}
+  var u=document.createElement('button');u.className='move-btn';u.textContent='↑';u.onclick=function(){moveRow(row,-1);};row.appendChild(u);
+  var d=document.createElement('button');d.className='move-btn';d.textContent='↓';d.onclick=function(){moveRow(row,1);};row.appendChild(d);
+  return row;
+}
+function moveRow(row,dir){
+  var list=row.parentElement;var rows=list.querySelectorAll('.slot-order-row');
+  var ci=-1;rows.forEach(function(r,i){if(r===row)ci=i;});
+  var ti=ci+dir;if(ti<0||ti>=rows.length)return;
+  if(dir===-1)list.insertBefore(row,rows[ti]);else list.insertBefore(row,rows[ti].nextSibling);
+  saveOrder(list);
+}
+function saveOrder(list){
+  var order=[];list.querySelectorAll('.slot-order-row').forEach(function(r){order.push(r.dataset.id);});
+  var xhr=new XMLHttpRequest();xhr.open('POST','/api/slots/'+LOCATION_ID+'/reorder');
+  xhr.setRequestHeader('Content-Type','application/json');
+  xhr.onload=function(){if(JSON.parse(xhr.responseText).success){showSaved();}};
+  xhr.send(JSON.stringify({order:order}));
+}
+function showSaved(){
+  var el=document.getElementById('saveStatus');el.style.display='inline';
+  clearTimeout(window.savedTimer);window.savedTimer=setTimeout(function(){el.style.display='none';},2000);
+}
+</script>
+{% endblock %}

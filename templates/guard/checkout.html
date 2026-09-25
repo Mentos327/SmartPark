@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}Check Out{% endblock %}
+{% block page_title %}Check Out{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+  <div>
+    <h3><i class="icon icon-check-circle me-2 text-red"></i>Check Out Vehicle</h3>
+    <span class="sub-title">{{ location.name if location }} — Process vehicle exit and payment</span>
+  </div>
+  <a href="{{ url_for('guard.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+
+    <!-- Vehicle Info Card -->
+    <div class="card mb-3 border-top-navy">
+      <div class="card-header bg-navy">
+        <h3 class="card-title">
+          <i class="icon icon-car-front me-2"></i>{{ session.plate_number }}
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="row text-center g-3 mb-3">
+          <div class="col-6">
+            <div class="label-eyebrow">Entry Time (EAT)</div>
+            <div class="fw-bold">{{ session.entry_time | eat_time }}</div>
+          </div>
+          <div class="col-6">
+            <div class="label-eyebrow">Duration</div>
+            <div class="fw-bold text-blue">{{ fee_info.duration_display }}</div>
+            {% if fee_info.billing_note %}
+            <div class="fs-sm text-muted">{{ fee_info.billing_note }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="text-center">
+          <div class="eyebrow eyebrow-gray mb-1">Amount Due</div>
+          <div id="liveFee" class="stat-figure-xl green d-none">KES {{ fee_info.fee_kes }}</div>
+          <div class="fs-sm text-muted mb-2">Calculated: KES <span id="calcFeeLabel">{{ fee_info.fee_kes }}</span> &bull; KES {{ fee_info.hourly_rate_kes }}/hr &bull; KES {{ fee_info.per_minute_rate }}/min</div>
+          <div class="input-group input-group-lg justify-content-center" style="max-width:260px;margin:0 auto;">
+            <span class="input-group-text">KES</span>
+            <input type="number" class="form-control text-center fw-bold" id="amountInput"
+                   value="{{ fee_info.fee_kes }}" min="0" step="1" oninput="onAmountEdit()">
+          </div>
+          <div id="overrideNote" class="fs-sm text-warning mt-1 d-none">
+            <i class="icon icon-exclamation-circle me-1"></i>Amount adjusted from calculated fee
+          </div>
+        </div>
+        {% if session.reservation_id %}
+        <div class="alert alert-info mt-3 mb-0 fs-80">
+          <i class="icon icon-info-circle me-1"></i>Reserved driver — fee is for actual time parked, not the full booking window.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Payment Form -->
+    <div class="card border-top-green">
+      <div class="card-header bg-green">
+        <h3 class="card-title"><i class="icon icon-cash me-2"></i>Collect Payment</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('guard.checkout', session_id=session.id) }}" id="paymentForm">
+          <input type="hidden" name="override_amount" id="overrideAmountField" value="{{ fee_info.fee_kes }}">
+          <input type="hidden" name="force_confirm" id="forceConfirmField" value="0">
+
+          <div class="mb-4">
+            <label class="form-label">Payment Method</label>
+            <div class="d-flex gap-3">
+              <div class="flex-fill">
+                <input class="form-check-input d-none" type="radio" name="payment_method"
+                       id="cash" value="cash" checked onchange="showPaymentFields('cash')" />
+                <label for="cash" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2 bg-navy" id="label-cash"
+           >
+                  <i class="icon icon-cash fs-5"></i> Cash
+                </label>
+              </div>
+              <div class="flex-fill">
+                <input class="form-check-input d-none" type="radio" name="payment_method"
+                       id="mpesa" value="mpesa" onchange="showPaymentFields('mpesa')" />
+                <label for="mpesa" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2" id="label-mpesa"
+           >
+                  <i class="icon icon-phone fs-5"></i> M-Pesa
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cash change calculator -->
+          <div id="changeCalc" class="mb-3 p-3 rounded bg-light border">
+            <label class="form-label">Cash Received (KES)</label>
+            <input type="number" class="form-control" id="cashReceived"
+                   placeholder="Enter amount given by customer"
+                   oninput="calcChange()" min="0" step="10" />
+            <div id="changeResult" class="mt-2 fw-bold d-none fs-90"></div>
+          </div>
+
+          <!-- M-Pesa Push -->
+          <div id="mpesaFields" class="mb-4 d-none">
+            <label class="form-label">Customer Phone Number</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="icon icon-phone"></i></span>
+              <input type="tel" class="form-control" id="mpesaPhone" placeholder="0712 345 678" />
+              <button type="button" class="btn btn-success" id="pushBtn" onclick="sendMpesaPush()">
+                <i class="icon icon-arrow-right me-1"></i>Send Push
+              </button>
+            </div>
+            <div class="form-text">A prompt for KES <span id="pushAmountLabel">{{ fee_info.fee_kes }}</span> will be sent to this number.</div>
+            <div id="mpesaResult" class="mt-2"></div>
+            <div id="waitingBox" class="alert alert-info fs-80 py-2 px-3 mt-2 d-none">
+              <i class="icon icon-clock-history me-1"></i>Waiting for the customer to confirm on their phone&hellip;
+            </div>
+            <div id="manualConfirmBox" class="mt-2 d-none">
+              <button type="button" class="btn btn-sm btn-outline-warning w-100" onclick="forceConfirmMpesa()">
+                <i class="icon icon-exclamation-circle me-1"></i>Not receiving confirmation? Mark as paid manually
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold" id="submitBtn">
+            <i class="icon icon-check-circle me-2"></i>Confirm Payment — KES <span id="btnFee">{{ fee_info.fee_kes }}</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var sessionId="{{ session.id }}";
+var calculatedFee={{ fee_info.fee_kes }};
+var feeAmount={{ fee_info.fee_kes }};
+var amountEditedByGuard=false;
+
+function currentAmount(){
+  return parseFloat(document.getElementById("amountInput").value)||0;
+}
+
+function syncAmountDisplays(){
+  var amt=currentAmount();
+  feeAmount=amt;
+  document.getElementById("btnFee").textContent=amt;
+  document.getElementById("pushAmountLabel").textContent=amt;
+  document.getElementById("overrideAmountField").value=amt;
+  var note=document.getElementById("overrideNote");
+  note.classList.toggle("d-none", amt===calculatedFee);
+  calcChange();
+}
+
+function onAmountEdit(){
+  amountEditedByGuard=true;
+  syncAmountDisplays();
+}
+
+// Refresh the *calculated* fee every minute (duration keeps growing) but
+// never stomp on an amount the guard has manually typed in.
+function refreshFee(){
+  fetch("/api/payments/fee/"+sessionId)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.fee_kes){
+        calculatedFee=d.fee_kes;
+        document.getElementById("calcFeeLabel").textContent=d.fee_kes;
+        if(!amountEditedByGuard){
+          document.getElementById("amountInput").value=d.fee_kes;
+          syncAmountDisplays();
+        }
+      }
+    }).catch(function(){});
+}
+setInterval(refreshFee,60000);
+syncAmountDisplays();
+
+var mpesaPushSent=false;
+
+function showPaymentFields(method){
+  var mf=document.getElementById("mpesaFields");
+  if(method==="mpesa"){ mf.classList.remove("d-none"); } else { mf.classList.add("d-none"); }
+  document.getElementById("changeCalc").style.display=method==="cash"?"block":"none";
+  var lc=document.getElementById("label-cash");
+  var lm=document.getElementById("label-mpesa");
+  if(method==="cash"){
+    lc.style.background="var(--navy)";lc.style.color="#fff";lc.style.borderColor="var(--navy)";
+    lm.style.background="";lm.style.color="";lm.style.borderColor="";
+    document.getElementById("submitBtn").disabled=false;
+  } else {
+    lm.style.background="var(--green)";lm.style.color="#fff";lm.style.borderColor="var(--green)";
+    lc.style.background="";lc.style.color="";lc.style.borderColor="";
+    document.getElementById("submitBtn").disabled=!mpesaPushSent;
+  }
+}
+
+function sendMpesaPush(){
+  var phone=document.getElementById("mpesaPhone").value.trim();
+  if(!phone){alert("Please enter the customer's phone number.");return;}
+  if(currentAmount()<=0){alert("Please enter an amount greater than zero.");return;}
+  syncAmountDisplays();
+
+  var rd=document.getElementById("mpesaResult");
+  rd.innerHTML="<div class='text-muted fs-80'><i class='icon icon-clock-history me-1'></i>Sending push...</div>";
+  document.getElementById("pushBtn").disabled=true;
+  document.getElementById("mpesaPhone").disabled=true;
+  document.getElementById("amountInput").disabled=true;
+
+  fetch("/api/payments/mpesa/push",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({session_id:sessionId,phone:phone,amount:feeAmount})
+  }).then(function(r){return r.json();})
+  .then(function(d){
+    if(d.success){
+      rd.innerHTML="<div class='alert alert-success fs-80 py-2 px-3'>"+d.message+"</div>";
+      mpesaPushSent=true;
+      document.getElementById("submitBtn").disabled=false;
+      document.getElementById("waitingBox").classList.remove("d-none");
+      setTimeout(function(){
+        document.getElementById("manualConfirmBox").classList.remove("d-none");
+      }, 15000);
+      startCallbackPoll();
+    } else {
+      rd.innerHTML="<div class='alert alert-danger fs-80 py-2 px-3'>"+d.error+"</div>";
+      document.getElementById("pushBtn").disabled=false;
+      document.getElementById("mpesaPhone").disabled=false;
+      document.getElementById("amountInput").disabled=false;
+    }
+  }).catch(function(){
+    rd.innerHTML="<div class='alert alert-danger fs-80 py-2 px-3'>Could not send push. Try again.</div>";
+    document.getElementById("pushBtn").disabled=false;
+    document.getElementById("mpesaPhone").disabled=false;
+    document.getElementById("amountInput").disabled=false;
+  });
+}
+
+function calcChange(){
+  var received=parseFloat(document.getElementById("cashReceived").value)||0;
+  var result=document.getElementById("changeResult");
+  if(received<=0){result.classList.add("d-none");return;}
+  var change=received-feeAmount;
+  result.classList.remove("d-none");
+  if(change>=0){
+    result.style.color="var(--green)";
+    result.textContent="Change to give: KES "+change.toFixed(0);
+  } else {
+    result.style.color="var(--red)";
+    result.textContent="Still owed: KES "+Math.abs(change).toFixed(0);
+  }
+}
+
+function forceConfirmMpesa(){
+  if(!confirm("Only do this if you have personally verified the customer's M-Pesa payment (e.g. their confirmation SMS). This will complete checkout without waiting for Safaricom. Continue?")){
+    return;
+  }
+  document.getElementById("forceConfirmField").value="1";
+  document.getElementById("paymentForm").submit();
+}
+
+var pollInterval=null;
+function startCallbackPoll(){
+  if(pollInterval)clearInterval(pollInterval);
+  pollInterval=setInterval(function(){
+    fetch("/api/payments/fee/"+sessionId)
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.completed||d.error){
+          clearInterval(pollInterval);
+          window.location.href="/guard/receipt/"+sessionId;
+        }
+      }).catch(function(){});
+  },5000);
+}
+</script>
+{% endblock %}

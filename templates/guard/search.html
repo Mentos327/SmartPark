@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Search Vehicle{% endblock %}
+{% block page_title %}Search Vehicle{% endblock %}
+{% from "partials/duration_macro.html" import duration %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-search me-2 text-blue"></i>Search Vehicle by Plate</h3>
+    <span class="sub-title">Look up any vehicle's current or past sessions</span>
+  </div>
+  <a href="{{ url_for('guard.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('guard.search') }}">
+          <div class="input-group input-group-lg">
+            <span class="input-group-text"><i class="icon icon-car-front"></i></span>
+            <input type="text" class="form-control text-uppercase fw-bold tracked-wide" name="plate"
+          placeholder="e.g. KCA 123A" required autocomplete="off"
+         />
+            <button class="btn btn-primary" type="submit">
+              <i class="icon icon-search me-1"></i>Search
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if active_session %}
+    <div class="card mb-4 border-status-yellow">
+      <div class="card-header bg-yellow">
+        <h3 class="card-title"><i class="icon icon-clock-history me-2"></i>Currently Parked</h3>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-6 col-md-3 text-center">
+            <div class="label-eyebrow">Plate</div>
+            <div class="heading-display fs-110">{{ active_session.plate_number }}</div>
+          </div>
+          <div class="col-6 col-md-3 text-center">
+            <div class="label-eyebrow">Entry (EAT)</div>
+            <div class="fw-bold">{{ active_session.entry_time | eat_time }}</div>
+          </div>
+          <div class="col-6 col-md-3 text-center">
+            <div class="label-eyebrow">Slot</div>
+            <div class="fw-bold">{{ active_session.slot_number or 'No slot' }}</div>
+          </div>
+        </div>
+        <a href="{{ url_for('guard.checkout', session_id=active_session.id) }}" class="btn btn-warning">
+          <i class="icon icon-check-circle me-1"></i>Check Out This Vehicle
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if history %}
+    <div class="card">
+      <div class="card-header bg-dark">
+        <h3 class="card-title"><i class="icon icon-clock-history me-2"></i>Parking History</h3>
+        <span class="badge bg-light text-dark">{{ history | length }} record(s)</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Entry (EAT)</th>
+                <th>Exit (EAT)</th>
+                <th>Duration</th>
+                <th>Fee (KES)</th>
+                <th>Payment</th>
+                <th>Type</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in history %}
+              <tr>
+                <td class="fs-82">{{ s.entry_time | eat_time }}</td>
+                <td class="fs-82">
+                  {% if s.exit_time %}{{ s.exit_time | eat_time }}
+                  {% else %}<span class="text-warning fw-bold">Still parked</span>{% endif %}
+                </td>
+                <td class="fs-82">{{ duration(s.entry_time, s.exit_time) }}</td>
+                <td><strong>{{ s.fee_kes | int if s.fee_kes else '—' }}</strong></td>
+                <td>
+                  {% if s.payment_method == 'mpesa' %}
+                    <span class="badge badge-mpesa"><i class="icon icon-phone me-1"></i>M-Pesa</span>
+                  {% elif s.payment_method == 'cash' %}
+                    <span class="badge badge-cash">Cash</span>
+                  {% else %}—{% endif %}
+                </td>
+                <td>
+                  {% if s.reservation_id %}
+                    <span class="badge badge-reserved">Reserved</span>
+                  {% else %}
+                    <span class="badge badge-disabled">Walk-in</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if s.status == 'active' %}
+                    <span class="badge badge-reserved">Active</span>
+                  {% else %}
+                    <span class="badge badge-available">Done</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if request.method == 'POST' and not active_session and not history %}
+    <div class="alert alert-info">
+      <i class="icon icon-info-circle me-2"></i>No parking history found for that plate number.
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelector('input[name=plate]').addEventListener('input',function(){this.value=this.value.toUpperCase();});
+</script>
+{% endblock %}

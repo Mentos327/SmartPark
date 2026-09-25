@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}smart.park{% endblock %}</title>
+  <!-- Self-hosted icon set (static/css/icons.css) — no external CDN -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/icons.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/slot_map.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+<!-- ═══ SIDEBAR LAYOUT ═══ -->
+<div class="wrapper">
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ──── SIDEBAR ──── -->
+  <nav id="sidebar">
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="icon icon-p-circle-fill"></i></div>
+      <div class="brand-text">
+        Smart Parking
+        <span class="brand-sub">Management</span>
+      </div>
+    </div>
+
+    <!-- User Panel -->
+    <div class="sidebar-user-panel">
+      <div class="user-avatar">{{ current_user.name[0] | upper }}</div>
+      <div class="user-info">
+        <span class="user-name">{{ current_user.name }}</span>
+        <span class="user-status">
+          <i class="icon icon-info-circle"></i>
+          {{ current_user.role | replace('_', ' ') | title }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="sidebar-nav">
+      <ul>
+
+        {% if current_user.role == 'super_admin' %}
+        <p class="sidebar-section-label">Main Menu</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('super_admin.dashboard') }}" class="sidebar-nav-link {% if request.endpoint == 'super_admin.dashboard' %}active{% endif %}">
+            <i class="icon icon-clock-history nav-icon"></i> Dashboard
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('super_admin.locations') }}" class="sidebar-nav-link {% if request.endpoint == 'super_admin.locations' %}active{% endif %}">
+            <i class="icon icon-geo-alt nav-icon"></i> Locations
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('super_admin.admins') }}" class="sidebar-nav-link {% if request.endpoint == 'super_admin.admins' %}active{% endif %}">
+            <i class="icon icon-person-badge nav-icon"></i> Admins
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('super_admin.all_users') }}" class="sidebar-nav-link {% if request.endpoint == 'super_admin.all_users' %}active{% endif %}">
+            <i class="icon icon-person-badge nav-icon"></i> All Users
+          </a>
+        </li>
+        <p class="sidebar-section-label">System</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('super_admin.system_logs') }}" class="sidebar-nav-link {% if request.endpoint == 'super_admin.system_logs' %}active{% endif %}">
+            <i class="icon icon-info-circle nav-icon"></i> System Logs
+          </a>
+        </li>
+        <p class="sidebar-section-label">Account</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('super_admin.profile') }}" class="sidebar-nav-link {% if request.endpoint == 'super_admin.profile' %}active{% endif %}">
+            <i class="icon icon-person nav-icon"></i> My Profile
+          </a>
+        </li>
+        {% endif %}
+
+        {% if current_user.role == 'admin' %}
+        <p class="sidebar-section-label">Dashboard</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('admin.dashboard') }}" class="sidebar-nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+            <i class="icon icon-clock-history nav-icon"></i> Dashboard
+          </a>
+        </li>
+        <p class="sidebar-section-label">Management</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('admin.slots') }}" class="sidebar-nav-link {% if request.endpoint == 'admin.slots' %}active{% endif %}">
+            <i class="icon icon-grid-3x3 nav-icon"></i> Manage Slots
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('admin.guards') }}" class="sidebar-nav-link {% if request.endpoint == 'admin.guards' %}active{% endif %}">
+            <i class="icon icon-person-badge nav-icon"></i> Guards
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('admin.pricing') }}" class="sidebar-nav-link {% if request.endpoint == 'admin.pricing' %}active{% endif %}">
+            <i class="icon icon-cash nav-icon"></i> Pricing & Payments
+          </a>
+        </li>
+        <p class="sidebar-section-label">Reports</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('admin.reports') }}" class="sidebar-nav-link {% if request.endpoint == 'admin.reports' %}active{% endif %}">
+            <i class="icon icon-cash nav-icon"></i> Revenue Reports
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('admin.camera') }}" class="sidebar-nav-link {% if request.endpoint == 'admin.camera' %}active{% endif %}">
+            <i class="icon icon-camera nav-icon"></i> Camera View
+          </a>
+        </li>
+        <p class="sidebar-section-label">Account</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('admin.profile') }}" class="sidebar-nav-link {% if request.endpoint == 'admin.profile' %}active{% endif %}">
+            <i class="icon icon-person nav-icon"></i> My Profile
+          </a>
+        </li>
+        {% endif %}
+
+        {% if current_user.role == 'guard' %}
+        <p class="sidebar-section-label">Operations</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('guard.dashboard') }}" class="sidebar-nav-link {% if request.endpoint == 'guard.dashboard' %}active{% endif %}">
+            <i class="icon icon-clock-history nav-icon"></i> Dashboard
+            {% if notifications.get('conflict_count') %}
+              <span class="nav-badge">{{ notifications.conflict_count }}</span>
+            {% endif %}
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('guard.checkin') }}" class="sidebar-nav-link {% if request.endpoint == 'guard.checkin' %}active{% endif %}">
+            <i class="icon icon-arrow-right nav-icon"></i> Check In Vehicle
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('guard.search') }}" class="sidebar-nav-link {% if request.endpoint == 'guard.search' %}active{% endif %}">
+            <i class="icon icon-search nav-icon"></i> Search Vehicle
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('guard.camera') }}" class="sidebar-nav-link {% if request.endpoint == 'guard.camera' %}active{% endif %}">
+            <i class="icon icon-camera nav-icon"></i> Scan Plate
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('guard.slot_map') }}" class="sidebar-nav-link {% if request.endpoint == 'guard.slot_map' %}active{% endif %}">
+            <i class="icon icon-grid-3x3 nav-icon"></i> Slot Map
+          </a>
+        </li>
+        <p class="sidebar-section-label">Account</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('guard.profile') }}" class="sidebar-nav-link {% if request.endpoint == 'guard.profile' %}active{% endif %}">
+            <i class="icon icon-person nav-icon"></i> My Profile
+          </a>
+        </li>
+        {% endif %}
+
+        {% if current_user.role == 'driver' %}
+        <p class="sidebar-section-label">Parking</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('driver.dashboard') }}" class="sidebar-nav-link {% if request.endpoint == 'driver.dashboard' %}active{% endif %}">
+            <i class="icon icon-geo-alt nav-icon"></i> Find Parking
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('driver.reserve') }}" class="sidebar-nav-link {% if request.endpoint == 'driver.reserve' %}active{% endif %}">
+            <i class="icon icon-plus-circle nav-icon"></i> New Booking
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('driver.my_reservations') }}" class="sidebar-nav-link {% if request.endpoint == 'driver.my_reservations' %}active{% endif %}">
+            <i class="icon icon-calendar-check nav-icon"></i> My Reservations
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('driver.history') }}" class="sidebar-nav-link {% if request.endpoint == 'driver.history' %}active{% endif %}">
+            <i class="icon icon-clock-history nav-icon"></i> Parking History
+          </a>
+        </li>
+        <p class="sidebar-section-label">Account</p>
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('driver.profile') }}" class="sidebar-nav-link {% if request.endpoint == 'driver.profile' %}active{% endif %}">
+            <i class="icon icon-person nav-icon"></i> My Profile
+          </a>
+        </li>
+        {% endif %}
+
+        <!-- Logout always last -->
+        <div class="sidebar-footer">
+          <li class="sidebar-nav-item">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-nav-link text-danger">
+              <i class="icon icon-arrow-left nav-icon"></i> Logout
+            </a>
+          </li>
+        </div>
+      </ul>
+    </div>
+  </nav><!-- /sidebar -->
+
+  <!-- ──── MAIN CONTENT ──── -->
+  <div id="main-content">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <i class="icon icon-list"></i>
+      </button>
+
+      <div class="breadcrumb-area d-none d-md-flex align-items-center gap-1">
+        {% block breadcrumb %}
+          <span>Smart Parking</span>
+          <span class="opacity-50">/</span>
+          <span class="bc-active">{% block page_title %}{% endblock %}</span>
+        {% endblock %}
+      </div>
+
+      <div class="topbar-right">
+        <a href="{{ url_for('auth.logout') }}" class="topbar-btn" title="Logout">
+          <i class="icon icon-arrow-right"></i>
+          <span class="d-none d-sm-inline">Logout</span>
+        </a>
+      </div>
+    </header><!-- /topbar -->
+
+    <!-- Page Content -->
+    <main class="page-content">
+      {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible" role="alert">
+          <i class="icon icon-{% if category == 'success' %}check-circle{% elif category == 'danger' or category == 'error' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+          {{ message }}
+          <button type="button" class="alert-dismiss-btn" aria-label="Close">&times;</button>
+        </div>
+      {% endfor %}
+
+      {% block content %}{% endblock %}
+    </main><!-- /page-content -->
+
+    <!-- Footer -->
+    <footer class="main-footer">
+      <span>
+        <a href="#">smart.park</a> &copy; {{ now.year }} &mdash; All rights reserved.
+      </span>
+    </footer>
+
+  </div><!-- /#main-content -->
+</div><!-- /.wrapper -->
+
+{% else %}
+<!-- ═══ UNAUTHENTICATED — full-page layout (no sidebar/topbar) ═══ -->
+{% block auth_content %}{% endblock %}
+{% endif %}
+
+<!-- Vanilla JS only — no Bootstrap, no jQuery -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

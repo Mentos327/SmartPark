@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}Guard Dashboard — {{ location.name if location }}{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}
+  <span>{{ location.name if location }}</span>
+  <span class="opacity-50">/</span>
+  <span class="bc-active">Guard Dashboard</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-person-badge me-2 text-green"></i>Guard Dashboard</h3>
+    <span class="sub-title">{{ location.name if location }}</span>
+  </div>
+  <a href="{{ url_for('guard.slot_map') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-grid-3x3 me-1"></i>Slot Map
+  </a>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="small-box bg-green">
+      <div class="inner">
+        <h3>{{ slot_summary.available }}</h3>
+        <p>Available</p>
+      </div>
+      <a href="{{ url_for('guard.slot_map') }}" class="small-box-footer">View map <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="small-box bg-red">
+      <div class="inner">
+        <h3>{{ slot_summary.occupied }}</h3>
+        <p>Occupied</p>
+      </div>
+      <a href="{{ url_for('guard.slot_map') }}" class="small-box-footer">View map <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="small-box bg-yellow">
+      <div class="inner">
+        <h3>{{ slot_summary.reserved }}</h3>
+        <p>Reserved</p>
+      </div>
+      <a href="{{ url_for('guard.slot_map') }}" class="small-box-footer">View map <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="small-box bg-navy">
+      <div class="inner">
+        <h3>{{ active_sessions | length }}</h3>
+        <p>Active Now</p>
+      </div>
+      <a href="#activeSessions" class="small-box-footer">View below <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+</div>
+
+{% if notifications.get('conflict_count') %}
+<div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+  <i class="icon icon-exclamation-triangle fs-5"></i>
+  <span>
+    <strong>{{ notifications.conflict_count }} reservation conflict{{ 's' if notifications.conflict_count > 1 }}.</strong>
+    A reserved slot is occupied by a different vehicle. Review the reservations table below.
+  </span>
+</div>
+{% endif %}
+
+{% if notifications.get('approval_count') %}
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+  <i class="icon icon-exclamation-circle fs-5"></i>
+  <span>
+    <strong>{{ notifications.approval_count }} reservation{{ 's' if notifications.approval_count > 1 }} awaiting approval.</strong>
+    {{ 'These drivers have' if notifications.approval_count > 1 else 'This driver has' }} had 3+ no-shows in the last
+    30 days — review before their slot locks. See the reservations table below.
+  </span>
+</div>
+{% endif %}
+
+<!-- Active Sessions -->
+<div class="card" id="activeSessions">
+  <div class="card-header bg-red">
+    <h3 class="card-title"><i class="icon icon-clock-history me-2"></i>Vehicles Currently Parked</h3>
+    <span class="badge bg-light text-dark">{{ active_sessions | length }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if active_sessions %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Plate Number</th>
+            <th>Slot</th>
+            <th>Entry Time (EAT)</th>
+            <th>Duration</th>
+            {% if multiple_guards %}<th>Guard</th>{% endif %}
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in active_sessions %}
+          <tr>
+            <td><strong>{{ s.plate_number }}</strong></td>
+            <td><span class="badge bg-secondary">{{ s.slot_number or '—' }}</span></td>
+            <td>{{ s.entry_time | eat_time }}</td>
+            <td><span class="session-duration" data-entry="{{ s.entry_time }}">—</span></td>
+            {% if multiple_guards %}
+            <td class="text-muted fs-78">{{ guard_names.get(s.get('guard_id',''), '—') }}</td>
+            {% endif %}
+            <td>
+              <a href="{{ url_for('guard.checkout', session_id=s.id) }}" class="btn btn-sm btn-danger">
+                <i class="icon icon-check-circle me-1"></i>Check Out
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="icon icon-car-front"></i></div>
+      <p>No vehicles currently parked.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if active_reservations %}
+<!-- Pending Reservations -->
+<div class="card">
+  <div class="card-header bg-yellow">
+    <h3 class="card-title"><i class="icon icon-calendar-check me-2"></i>Upcoming Reservations</h3>
+    <span class="badge bg-dark">{{ active_reservations | length }}</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Slot</th>
+            <th>Driver</th>
+            <th>From (EAT)</th>
+            <th>Until (EAT)</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in active_reservations %}
+          <tr>
+            <td><strong>{{ r.slot_number or r.slot_id }}</strong></td>
+            <td>{{ r.driver_name or 'Walk-in event' }}</td>
+            <td>{{ r.reserved_from | eat_time }}</td>
+            <td>{{ r.reserved_until | eat_time }}</td>
+            <td>
+              {% if r.status == 'conflict' %}
+                <span class="badge badge-conflict">Conflict</span>
+              {% elif r.status == 'pending_approval' %}
+                <span class="badge badge-reserved">Needs Approval</span>
+              {% else %}
+                <span class="badge badge-reserved">{{ r.status | title }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.status == 'conflict' %}
+                <form method="POST" action="{{ url_for('guard.resolve_conflict', reservation_id=r.id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-sm btn-warning">Resolve</button>
+                </form>
+              {% elif r.status == 'pending_approval' %}
+                <form method="POST" action="{{ url_for('guard.approve_pending_reservation', reservation_id=r.id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-sm btn-primary">Approve</button>
+                </form>
+              {% else %}
+                <a href="{{ url_for('guard.checkin', reservation_id=r.id) }}" class="btn btn-sm btn-outline-primary">Check In</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Today's Completed Sessions -->
+<div class="card">
+  <div class="card-header bg-dark">
+    <h3 class="card-title"><i class="icon icon-cash me-2"></i>Today's Completed Sessions</h3>
+  </div>
+  <div class="card-body p-0">
+    {% if today_sessions %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Receipt</th>
+            <th>Plate</th>
+            <th>Fee (KES)</th>
+            <th>Payment</th>
+            <th>Exit Time (EAT)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in today_sessions %}
+          <tr>
+            <td class="text-muted fs-78">{{ s.receipt_number }}</td>
+            <td><strong>{{ s.plate_number }}</strong></td>
+            <td><strong>{{ s.fee_kes | int }}</strong></td>
+            <td>
+              {% if s.payment_method == 'mpesa' %}
+                <span class="badge badge-mpesa"><i class="icon icon-phone me-1"></i>M-Pesa</span>
+              {% else %}
+                <span class="badge badge-cash"><i class="icon icon-cash me-1"></i>Cash</span>
+              {% endif %}
+            </td>
+            <td>{{ s.exit_time | eat_time }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="icon icon-info-circle"></i></div>
+      <p>No completed sessions today yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateDurations(){
+  document.querySelectorAll('.session-duration').forEach(function(el){
+    var entry=new Date(el.dataset.entry+'Z');
+    var now=new Date();
+    var mins=Math.floor((now-entry)/60000);
+    var hrs=Math.floor(mins/60);
+    var rem=mins%60;
+    el.textContent=hrs>0?hrs+'h '+rem+'m':mins+'m';
+  });
+}
+updateDurations();setInterval(updateDurations,60000);
+</script>
+{% endblock %}

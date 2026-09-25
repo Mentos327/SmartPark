@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}System Logs{% endblock %}
+{% block page_title %}System Logs{% endblock %}
+{% block breadcrumb %}
+  <span>System</span><span class="opacity-50">/</span>
+  <span class="bc-active">Audit Logs</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-info-circle me-2 text-navy"></i>System Logs</h3>
+    <span class="sub-title">Last 200 audit actions across all locations</span>
+  </div>
+  <a href="{{ url_for('super_admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-header bg-dark">
+    <h3 class="card-title"><i class="icon icon-search me-2"></i>Filter Logs</h3>
+  </div>
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('super_admin.system_logs') }}" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Role</label>
+        <select name="role" class="form-select form-select-sm">
+          <option value="">All Roles</option>
+          <option value="guard"       {{ 'selected' if role_filter == 'guard' }}>Guard</option>
+          <option value="admin"       {{ 'selected' if role_filter == 'admin' }}>Admin</option>
+          <option value="super_admin" {{ 'selected' if role_filter == 'super_admin' }}>Super Admin</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Action</label>
+        <select name="action" class="form-select form-select-sm">
+          <option value="">All Actions</option>
+          <option value="check_in"    {{ 'selected' if action_filter == 'check_in' }}>Check In</option>
+          <option value="check_out"   {{ 'selected' if action_filter == 'check_out' }}>Check Out</option>
+          <option value="price_change" {{ 'selected' if action_filter == 'price_change' }}>Price Change</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Location</label>
+        <select name="location" class="form-select form-select-sm">
+          <option value="">All Locations</option>
+          {% for loc in locations %}
+          <option value="{{ loc.id }}" {{ 'selected' if location_filter == loc.id | string }}>{{ loc.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="icon icon-search me-1"></i>Filter</button>
+        <a href="{{ url_for('super_admin.system_logs') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Log Table -->
+<div class="card">
+  <div class="card-header bg-navy">
+    <h3 class="card-title"><i class="icon icon-grid-3x3 me-2"></i>Audit Entries</h3>
+    <span class="badge bg-light text-dark">{{ logs | length }} entries</span>
+  </div>
+  <div class="card-body p-0">
+    {% if logs %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Time (EAT)</th>
+            <th>Who</th>
+            <th>Role</th>
+            <th>Action</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td class="fs-78 text-muted">{{ log.timestamp | eat_time }}</td>
+            <td><strong class="fs-85">{{ log.user_name }}</strong></td>
+            <td>
+              <span class="badge {% if log.role == 'guard' %}bg-success{% elif log.role == 'admin' %}bg-warning text-dark{% elif log.role == 'super_admin' %}bg-primary{% else %}bg-secondary{% endif %}">
+                {{ log.role | replace('_', ' ') | title }}
+              </span>
+            </td>
+            <td>
+              <span class="badge bg-secondary">{{ log.action | replace('_', ' ') | title }}</span>
+            </td>
+            <td class="fs-78 text-muted">
+              {% if log.details %}
+                {% for k, v in log.details.items() %}
+                  <span class="me-2"><strong>{{ k }}:</strong> {{ v }}</span>
+                {% endfor %}
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="icon icon-info-circle"></i></div>
+      <p>No log entries found for the selected filters.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

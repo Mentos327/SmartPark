@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Scan{% endblock %}
+{% block page_title %}Camera Scan{% endblock %}
+{% block extra_css %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div><h3><i class="icon icon-camera me-2 text-navy"></i>Camera Scan</h3><span class="sub-title">Scan number plates for fast check-in</span></div>
+  <a href="{{ url_for('guard.dashboard') }}" class="btn btn-sm btn-outline-secondary"><i class="icon icon-arrow-left me-1"></i>Dashboard</a>
+</div>
+
+<div class="content-max">
+<div class="row g-4">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header bg-dark"><h3 class="card-title"><i class="icon icon-camera me-2"></i>Scan Camera</h3><span id="cameraStatus" class="badge bg-danger">Camera Off</span></div>
+      <div class="card-body p-0 video-frame">
+        <video id="cameraFeed" playsinline muted class="w-100 rounded media-h-300 media-cover"></video>
+      </div>
+      <div class="card-footer">
+        <div class="fs-78 text-muted mb-2">Point camera at number plate, then click Scan</div>
+        <div class="d-flex gap-2">
+          <button id="btnStartCamera" class="btn btn-success flex-grow-1" onclick="startCamera()"><i class="icon icon-arrow-right me-1"></i>Start</button>
+          <button id="btnScan" class="btn btn-danger flex-grow-1" onclick="captureAndScan()" disabled><i class="icon icon-camera me-1"></i>Scan</button>
+          <button id="btnStop" class="btn btn-secondary" onclick="stopCamera()" disabled><i class="icon icon-exclamation-circle me-1"></i>Stop</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card h-100">
+      <div class="card-header bg-navy"><h3 class="card-title"><i class="icon icon-info-circle me-2"></i>Scan Result</h3></div>
+      <div class="card-body">
+        <div id="scanSpinner" class="text-center py-4 d-none">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 fs-82 text-muted">Scanning...</p>
+        </div>
+        <div id="scanIdle" class="empty-state py-3">
+          <div class="empty-icon"><i class="icon icon-camera"></i></div>
+          <p>Start the camera, choose a mode, then click Scan.</p>
+        </div>
+        <div id="scanResult" class="d-none">
+          <div class="text-center mb-3">
+            <span class="status-pill-lg" id="scannedPlate">—</span>
+          </div>
+          <div id="sessionFound" class="d-none">
+            <div class="alert alert-warning"><strong>Vehicle is parked.</strong><p class="mb-1 mt-1" id="sessionDuration"></p><p class="mb-0">Current fee: KES <span id="sessionFee"></span></p></div>
+            <a id="checkoutBtn" href="#" class="btn btn-warning w-100 mb-2"><i class="icon icon-check-circle me-1"></i>Go to Check Out</a>
+          </div>
+          <div id="sessionNotFound" class="d-none">
+            <div class="alert alert-success"><i class="icon icon-check-circle me-1"></i>Vehicle not parked. Ready to check in.</div>
+            <a id="checkinBtn" href="#" class="btn btn-success w-100 mb-2"><i class="icon icon-arrow-right me-1"></i>Proceed to Check In</a>
+          </div>
+          <button class="btn btn-outline-secondary w-100 mt-1" onclick="resetScan()"><i class="icon icon-arrow-right me-1"></i>Scan Again</button>
+        </div>
+        </div>
+    </div>
+  </div>
+</div>
+</div><!-- /content-max -->
+
+<canvas id="captureCanvas" class="d-none"></canvas>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+<script>const LOCATION_ID="{{ location.id if location else '' }}";</script>
+{% endblock %}

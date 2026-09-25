@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Login — smart.park{% endblock %}
+
+{% block auth_content %}
+<div class="auth-page">
+  <div class="auth-box max-w-460">
+    <div class="auth-box-header">
+      <div class="auth-logo"><i class="icon icon-p-circle-fill"></i></div>
+      <h3>smart.park</h3>
+    </div>
+
+    <div class="auth-box-body">
+      {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible" role="alert">
+          {{ message }}<button type="button" class="alert-dismiss-btn" aria-label="Close">&times;</button>
+        </div>
+      {% endfor %}
+
+      <form method="POST" action="{{ url_for('auth.login') }}">
+        <div class="mb-3">
+          <label for="email" class="form-label fw-normal-case">Email Address</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="icon icon-envelope"></i></span>
+            <input type="email" class="form-control" id="email" name="email"
+                   placeholder="Enter your email" required autofocus />
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label for="password" class="form-label mb-0 fw-normal-case">Password</label>
+            <a href="{{ url_for('auth.forgot_password') }}" class="fs-85 text-danger">Forgot Password?</a>
+          </div>
+          <div class="input-group">
+            <span class="input-group-text"><i class="icon icon-lock"></i></span>
+            <input type="password" class="form-control" id="password" name="password"
+                   placeholder="Enter password" required />
+            <button type="button" class="btn btn-outline-secondary"
+                    onclick="togglePwd('password','eyeIcon')" tabindex="-1">
+              <i class="icon icon-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-danger w-100 py-2 btn-danger" 
+       >
+          <i class="icon icon-arrow-right me-2"></i>Sign In
+        </button>
+      </form>
+    </div>
+
+    <div class="auth-box-footer">
+      Driver without an account? <a href="{{ url_for('auth.register') }}" class="text-danger no-underline">Register here &rarr;</a>
+      <div class="mt-2">
+        <a href="{{ url_for('auth.index') }}" class="text-muted no-underline fs-85">
+          <i class="icon icon-arrow-left me-1"></i>Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

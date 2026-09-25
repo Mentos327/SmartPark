@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Location Admins{% endblock %}
+{% block page_title %}Admins{% endblock %}
+{% block breadcrumb %}
+  <span>System</span><span class="opacity-50">/</span>
+  <span class="bc-active">Location Admins</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-person-badge me-2 text-blue"></i>Location Admins</h3>
+    <span class="sub-title">Owners and managers of each parking location</span>
+  </div>
+  <a href="{{ url_for('super_admin.create_admin') }}" class="btn btn-sm btn-primary">
+    <i class="icon icon-person-badge me-1"></i>Add Admin
+  </a>
+</div>
+
+{% if admins %}
+<div class="row g-3">
+  {% for admin in admins %}
+  {% set admin_location = locations | selectattr("id", "equalto", admin.location_id | int) | first %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-top-blue">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+          <div class="guard-avatar me-3 bg-blue">{{ admin.name[0] | upper }}</div>
+          <div>
+            <div class="fw-bold font-display">{{ admin.name }}</div>
+            <div class="fs-78 text-muted">{{ admin.email }}</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="fs-82">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="label-eyebrow">Location</span>
+            <span>
+              {% if admin_location %}
+                <span class="badge bg-primary">{{ admin_location.name }}</span>
+              {% else %}
+                <span class="text-muted">Not assigned</span>
+              {% endif %}
+            </span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span class="label-eyebrow">Phone</span>
+            <span>{{ admin.phone if admin.phone else '—' }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span class="label-eyebrow">National ID</span>
+            <span>{{ admin.national_id if admin.national_id else '—' }}</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="label-eyebrow">Joined</span>
+            <span>{% if admin.joined_at %}{{ admin.joined_at | eat_time }}{% else %}—{% endif %}</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer d-flex gap-2">
+        <a href="{{ url_for('super_admin.edit_admin', admin_id=admin.id) }}" class="btn btn-outline-secondary btn-sm flex-fill">
+          <i class="icon icon-info-circle me-1"></i>Edit
+        </a>
+        <form method="POST" action="{{ url_for('super_admin.remove_admin', admin_id=admin.id) }}"
+              onsubmit="return confirm('Remove {{ admin.name }}? They will no longer be able to log in.')"
+              class="flex-fill">
+          <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+            <i class="icon icon-person me-1"></i>Remove Admin
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="card"><div class="card-body">
+      <div class="empty-state">
+        <div class="empty-icon"><i class="icon icon-person-badge"></i></div>
+        <p>No admins registered yet.</p>
+        <a href="{{ url_for('super_admin.create_admin') }}" class="btn btn-primary mt-3">Add First Admin</a>
+      </div>
+    </div></div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

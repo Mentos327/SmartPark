@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Super Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-geo-alt me-2 text-teal"></i>Super Admin Dashboard</h3>
+    <span class="sub-title">System-wide overview — smart.park</span>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('super_admin.create_location_view') }}" class="btn btn-sm btn-danger">
+      <i class="icon icon-plus-circle me-1"></i>Add Location
+    </a>
+  </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="small-box bg-aqua">
+      <div class="inner">
+        <h3>{{ locations | length }}</h3>
+        <p>Total Locations</p>
+      </div>
+      <a href="{{ url_for('super_admin.locations') }}" class="small-box-footer">More info <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="small-box bg-green">
+      <div class="inner">
+        <h3>{{ admins | length }}</h3>
+        <p>Location Admins</p>
+      </div>
+      <a href="{{ url_for('super_admin.admins') }}" class="small-box-footer">More info <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="small-box bg-yellow">
+      <div class="inner">
+        <h3>{{ total_slots or 0 }}</h3>
+        <p>Total Slots</p>
+      </div>
+      <a href="{{ url_for('super_admin.locations') }}" class="small-box-footer">More info <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+</div>
+
+<!-- Locations Grid -->
+<div class="card">
+  <div class="card-header bg-dark">
+    <h3 class="card-title"><i class="icon icon-geo-alt me-2"></i>All Parking Locations</h3>
+    <a href="{{ url_for('super_admin.create_location_view') }}" class="btn btn-sm btn-outline-light">
+      <i class="icon icon-plus-circle me-1"></i>Add New
+    </a>
+  </div>
+  <div class="card-body">
+    {% if locations %}
+    <div class="row g-3">
+      {% for loc in locations %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card mb-0 border-status-blue">
+          <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="font-display text-navy mb-0 fs-90">{{ loc.name }}</h6>
+              <span class="badge {% if loc.get('is_active', True) %}bg-success{% else %}bg-danger{% endif %} fs-xs">
+                {{ 'Active' if loc.get('is_active', True) else 'Suspended' }}
+              </span>
+            </div>
+            <p class="fs-78 text-muted mb-2">
+              <i class="icon icon-geo-alt me-1"></i>{{ loc.address }}
+            </p>
+            <div class="d-flex gap-2 mb-2 fs-75">
+              <span class="text-success fw-bold"><i class="icon icon-info-circle me-1 dot-sep"></i>{{ loc.slot_summary.available if loc.slot_summary is defined else '?' }} avail</span>
+              <span class="text-danger fw-bold"><i class="icon icon-info-circle me-1 dot-sep"></i>{{ loc.slot_summary.occupied if loc.slot_summary is defined else '?' }} occ</span>
+              <span class="text-warning fw-bold"><i class="icon icon-info-circle me-1 dot-sep"></i>{{ loc.slot_summary.reserved if loc.slot_summary is defined else '?' }} res</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fs-78 text-muted fw-bold">KES {{ loc.hourly_rate | int }}/hr</span>
+              <span class="badge bg-secondary fs-xs">{{ loc.type }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="icon icon-geo-alt"></i></div>
+      <p>No locations yet. <a href="{{ url_for('super_admin.create_location_view') }}">Create your first one.</a></p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

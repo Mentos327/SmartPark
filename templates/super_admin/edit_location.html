@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Edit Location{% endblock %}
+{% block page_title %}Edit Location{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-geo-alt me-2 text-blue"></i>Edit Location</h3>
+    <span class="sub-title">Update details for {{ location.name }}</span>
+  </div>
+  <a href="{{ url_for('super_admin.locations') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Locations
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-top-blue">
+      <div class="card-header bg-blue">
+        <h3 class="card-title"><i class="icon icon-geo-alt me-2"></i>Location Details</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('super_admin.edit_location', location_id=location.id) }}">
+          <div class="mb-3">
+            <label class="form-label">Location Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="name" value="{{ location.name }}" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Address <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="address" value="{{ location.address }}" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">County <span class="text-danger">*</span></label>
+            <select class="form-select" name="county" required>
+              {% for county in counties %}
+              <option value="{{ county }}" {% if county == location.county %}selected{% endif %}>{{ county }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select class="form-select" name="type">
+              {% for type_value, type_label in location_types %}
+              <option value="{{ type_value }}" {% if type_value == location.type %}selected{% endif %}>{{ type_label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="row g-3 mb-4">
+            <div class="col-6">
+              <label class="form-label">Total Slots</label>
+              <input type="number" class="form-control" name="total_slots" value="{{ location.total_slots }}" min="0" />
+              <div class="form-text">Capacity estimate shown on the location card.</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Hourly Rate (KES) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" name="hourly_rate" value="{{ location.hourly_rate | int }}" min="5" step="5" required />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="icon icon-check-circle me-1"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Check In — {{ location.name if location }}{% endblock %}
+{% block page_title %}Check In{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-arrow-right me-2 text-green"></i>Confirm Vehicle Entry</h3>
+    <span class="sub-title">{{ location.name if location }} — Record a new vehicle check-in</span>
+  </div>
+  <a href="{{ url_for('guard.dashboard') }}" class="btn btn-sm btn-outline-secondary no-print">
+    <i class="icon icon-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-6">
+    {% if prefill_reservation %}
+    <div class="alert alert-success">
+      <i class="icon icon-check-circle me-2"></i>
+      <strong>Reservation Found</strong> — Driver: <strong>{{ prefill_reservation.driver_name }}</strong> &mdash;
+      Slot: <strong>{{ prefill_reservation.slot_number }}</strong>
+    </div>
+    {% endif %}
+
+    <div class="card border-top-green">
+      <div class="card-header bg-green">
+        <h3 class="card-title"><i class="icon icon-car-front me-2"></i>Vehicle Entry Form</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('guard.checkin') }}">
+          {% if prefill_reservation_id %}
+          <input type="hidden" name="reservation_id" value="{{ prefill_reservation_id }}">
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label">Number Plate <span class="text-danger">*</span></label>
+            <input type="text" name="plate_number"
+          class="form-control form-control-lg fw-bold text-uppercase tracked-wider fs-120"
+          placeholder="e.g. KCA 123A"
+          value="{{ scanned_plate or '' }}"
+          maxlength="12" required autocomplete="off"
+         />
+            <div class="form-text">Enter the vehicle's number plate exactly as it appears.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Assign Slot</label>
+            <select name="slot_id" class="form-select">
+              <option value="">— No slot assigned (walk-in) —</option>
+              {% for slot in available_slots %}
+              <option value="{{ slot.id }}"
+                {% if prefill_slot_id and slot.id | string == prefill_slot_id %}selected{% endif %}>
+                {{ slot.slot_number }}
+                {% if slot.status == 'reserved' %} (Reserved — driver's slot){% endif %}
+                {% if slot.upcoming_reservation_at %}— Booked from {{ slot.upcoming_reservation_at | eat_time }}{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Slots marked "Reserved" are pre-booked — assign only to the expected driver.</div>
+          </div>
+
+          <button type="submit" class="btn btn-success btn-lg w-100">
+            <i class="icon icon-arrow-right me-2"></i>Confirm Entry
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="mt-3 text-center">
+      
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelector('[name="plate_number"]').addEventListener('input',function(){
+  var pos=this.selectionStart;this.value=this.value.toUpperCase();this.setSelectionRange(pos,pos);
+});
+</script>
+{% endblock %}

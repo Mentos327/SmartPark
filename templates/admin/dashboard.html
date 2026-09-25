@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — {{ location.name if location }}{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}
+  <span>{{ location.name if location else 'Admin' }}</span>
+  <span class="opacity-50">/</span>
+  <span class="bc-active">Dashboard</span>
+{% endblock %}
+
+{% block extra_css %}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-clock-history me-2 text-red"></i>{{ location.name if location }}</h3>
+    <span class="sub-title"><i class="icon icon-geo-alt me-1"></i>{{ location.county if location }} County &mdash; Admin Dashboard</span>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('admin.reports') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="icon icon-cash me-1"></i>Reports
+    </a>
+    <a href="{{ url_for('admin.camera') }}" class="btn btn-sm btn-danger">
+      <i class="icon icon-camera me-1"></i>Camera View
+    </a>
+  </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="small-box bg-green">
+      <div class="inner">
+        <h3>{{ slot_summary.available }}</h3>
+        <p>Available Slots</p>
+      </div>
+      <a href="{{ url_for('admin.slots') }}" class="small-box-footer">More info <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="small-box bg-red">
+      <div class="inner">
+        <h3>{{ slot_summary.occupied }}</h3>
+        <p>Occupied Slots</p>
+      </div>
+      <a href="{{ url_for('admin.slots') }}" class="small-box-footer">More info <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="small-box bg-yellow">
+      <div class="inner">
+        <h3>{{ slot_summary.reserved }}</h3>
+        <p>Reserved Slots</p>
+      </div>
+      <a href="{{ url_for('admin.slots') }}" class="small-box-footer">More info <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="small-box bg-blue">
+      <div class="inner">
+        <h3>KES {{ today_revenue | int }}</h3>
+        <p>Today's Revenue</p>
+      </div>
+      <a href="{{ url_for('admin.reports') }}" class="small-box-footer">More info <i class="icon icon-arrow-right"></i></a>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Sessions -->
+<div class="card">
+  <div class="card-header bg-dark">
+    <h3 class="card-title"><i class="icon icon-clock-history me-2"></i>Recent Sessions</h3>
+    <a href="{{ url_for('admin.reports') }}" class="btn btn-sm btn-outline-light">View All</a>
+  </div>
+  <div class="card-body p-0">
+    {% if recent_sessions %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Receipt</th>
+            <th>Plate</th>
+            <th>Slot</th>
+            <th>Entry (EAT)</th>
+            <th>Fee (KES)</th>
+            <th>Payment</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in recent_sessions %}
+          <tr>
+            <td class="text-muted fs-78">{{ s.receipt_number }}</td>
+            <td><strong>{{ s.plate_number }}</strong></td>
+            <td>{{ s.slot_number or '—' }}</td>
+            <td>{{ s.entry_time | eat_time }}</td>
+            <td><strong>{{ s.fee_kes | int if s.fee_kes else '—' }}</strong></td>
+            <td>
+              {% if s.payment_method == 'mpesa' %}
+                <span class="badge badge-mpesa"><i class="icon icon-phone me-1"></i>M-Pesa</span>
+              {% elif s.payment_method == 'cash' %}
+                <span class="badge badge-cash"><i class="icon icon-cash me-1"></i>Cash</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if s.status == 'active' %}
+                <span class="badge badge-reserved">Active</span>
+              {% else %}
+                <span class="badge badge-available">Done</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="icon icon-info-circle"></i></div>
+      <p>No sessions recorded yet today.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

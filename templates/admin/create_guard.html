@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Add Guard{% endblock %}
+{% block page_title %}Add Guard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-person-badge me-2 text-green"></i>Add New Guard</h3>
+    <span class="sub-title">Create a guard account for {{ location.name if location }}</span>
+  </div>
+  <a href="{{ url_for('admin.guards') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Guards
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-top-green">
+      <div class="card-header bg-green">
+        <h3 class="card-title"><i class="icon icon-person-badge me-2"></i>Guard Account Details</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.create_guard') }}">
+          <div class="mb-3">
+            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="name" placeholder="Peter Kamau" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-control" name="email" placeholder="peter@example.com" />
+            <div class="form-text">Optional. If provided, credentials will be emailed to the guard.</div>
+          </div>
+
+          <div class="divider"></div>
+          <p class="fs-78 text-muted mb-2">Set login password</p>
+
+          <div class="mb-3">
+            <label class="form-label">Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input type="password" class="form-control" name="password" id="passwordField"
+                     placeholder="Enter a password" minlength="6" required />
+              <button type="button" class="btn btn-outline-secondary" onclick="generatePassword()"
+                      title="Generate a random password">
+                <i class="icon icon-arrow-right"></i>
+              </button>
+            </div>
+            <div class="form-text">Minimum 6 characters. The guard can change it after first login.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+            <input type="password" class="form-control" name="confirm_password" id="confirmField"
+                   placeholder="Repeat the password" required />
+            <div id="pwMismatch" class="form-text text-danger d-none">Passwords do not match.</div>
+          </div>
+
+          <div class="divider"></div>
+          <p class="fs-78 text-muted mb-2">Additional details (optional but recommended)</p>
+
+          <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" name="phone" placeholder="0712 345 678" />
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">National ID Number</label>
+            <input type="text" class="form-control" name="national_id" placeholder="e.g. 12345678" />
+            <div class="form-text">Used for record keeping and accountability.</div>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100" id="submitBtn">
+            <i class="icon icon-person-badge me-1"></i>Create Guard
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function generatePassword() {
+  var chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  var pw = "";
+  for (var i = 0; i < 10; i++) {
+    pw += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  var field   = document.getElementById("passwordField");
+  var confirm = document.getElementById("confirmField");
+  field.value   = pw;
+  confirm.value = pw;
+  field.type    = "text";
+  var toggleIcon = field.closest(".input-group").querySelector(".pw-toggle-btn i");
+  if (toggleIcon) toggleIcon.className = "icon icon-eye-slash";
+  document.getElementById("pwMismatch").classList.add("d-none");
+}
+
+/* Live mismatch hint */
+document.getElementById("confirmField").addEventListener("input", function () {
+  var match = this.value === document.getElementById("passwordField").value;
+  document.getElementById("pwMismatch").classList.toggle("d-none", match);
+});
+
+/* Block submit if passwords differ */
+document.querySelector("form").addEventListener("submit", function (e) {
+  var pw  = document.getElementById("passwordField").value;
+  var cpw = document.getElementById("confirmField").value;
+  if (pw !== cpw) {
+    e.preventDefault();
+    document.getElementById("pwMismatch").classList.remove("d-none");
+  }
+});
+</script>
+{% endblock %}

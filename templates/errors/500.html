@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}500 — Server Error{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-center min-h-60vh">
+  <div class="text-center">
+    <div class="stat-figure-hero yellow">500</div>
+    <h3 class="font-display">Internal Server Error</h3>
+    <p class="text-muted mb-5">Something went wrong on our end. Please try again shortly.</p>
+    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+      <i class="icon icon-grid-3x3 me-1"></i>Go to Dashboard
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block auth_content %}
+<div class="auth-page">
+  <div class="text-center">
+    <div class="stat-figure-hero yellow">500</div>
+    <h3 class="font-display text-white">Internal Server Error</h3>
+    <p class="mb-5" style="color: rgba(255,255,255,.75);">Something went wrong on our end. Please try again shortly.</p>
+    <a href="{{ url_for('auth.index') }}" class="btn btn-primary">
+      <i class="icon icon-grid-3x3 me-1"></i>Back Home
+    </a>
+  </div>
+</div>
+{% endblock %}

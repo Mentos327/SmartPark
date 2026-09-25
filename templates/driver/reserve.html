@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Reserve a Slot{% endblock %}
+{% block page_title %}New Booking{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-calendar-check me-2 text-blue"></i>Reserve a Parking Slot</h3>
+    <span class="sub-title">Select a location, choose a slot, and set your arrival time</span>
+  </div>
+  <a href="{{ url_for('driver.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Back
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card border-top-blue">
+      <div class="card-header bg-blue">
+        <h3 class="card-title"><i class="icon icon-calendar-check me-2"></i>Reservation Details</h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('driver.reserve') }}">
+          <div class="mb-3">
+            <label for="location_id" class="form-label">
+              <i class="icon icon-geo-alt me-1"></i>Parking Location
+            </label>
+            <select class="form-select" id="location_id" name="location_id"
+                    onchange="this.form.submit()" required>
+              <option value="">— Select a location —</option>
+              {% for loc in locations %}
+              <option value="{{ loc.id }}"
+                {% if selected_location and selected_location.id == loc.id %}selected{% endif %}>
+                {{ loc.name }} — KES {{ loc.hourly_rate | int }}/hr
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {% if selected_location %}
+          <div class="mb-3">
+            <label for="slot_id" class="form-label">
+              <i class="icon icon-grid-3x3 me-1"></i>Choose a Slot
+            </label>
+            {% if slots %}
+            <select class="form-select" id="slot_id" name="slot_id" required>
+              <option value="">— Pick a slot —</option>
+              {% for slot in slots %}
+              <option value="{{ slot.id }}"
+                {% if preselect_slot_id and preselect_slot_id == slot.id | string %}selected{% endif %}>
+                Level {{ slot.level if slot.level else 'G' }} — Slot {{ slot.slot_number }} ({{ slot.type }})
+              </option>
+              {% endfor %}
+            </select>
+            {% else %}
+            <div class="alert alert-warning">
+              <i class="icon icon-exclamation-triangle me-2"></i>No available slots at this location right now.
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-6">
+              <label for="reserved_from" class="form-label">
+                <i class="icon icon-clock-history me-1"></i>From
+              </label>
+              <input type="datetime-local" class="form-control" id="reserved_from" name="reserved_from" required />
+            </div>
+            <div class="col-6">
+              <label for="reserved_until" class="form-label">
+                <i class="icon icon-clock-history me-1"></i>Until
+              </label>
+              <input type="datetime-local" class="form-control" id="reserved_until" name="reserved_until" required />
+            </div>
+          </div>
+
+          {% if slots %}
+          <button type="submit" class="btn btn-primary btn-lg w-100">
+            <i class="icon icon-check-circle me-2"></i>Confirm Reservation
+          </button>
+          <p class="text-center mt-2 fs-78 text-muted">
+            <i class="icon icon-envelope me-1"></i>A confirmation will be sent to <strong>{{ current_user.email }}</strong>
+          </p>
+          {% endif %}
+          {% endif %}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var now=new Date();
+var pad=function(n){return String(n).padStart(2,'0')};
+var mv=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'T'+pad(now.getHours())+':'+pad(now.getMinutes());
+var f=document.getElementById('reserved_from'),u=document.getElementById('reserved_until');
+if(f)f.min=mv;if(u)u.min=mv;
+</script>
+{% endblock %}

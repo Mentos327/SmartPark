@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>smart.park — Reserve. Park. Go.</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/icons.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="landing-nav">
+  <div class="container d-flex align-items-center justify-content-between">
+    <div class="brand">
+      <div class="brand-icon"><i class="icon icon-p-circle-fill"></i></div>
+      smart.park
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('auth.login') }}" class="nav-link-white d-none d-md-inline">Login</a>
+      <a href="{{ url_for('auth.register') }}" class="nav-cta">
+        <i class="icon icon-calendar-check me-1"></i>Reserve Now
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container hero-content">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-8">
+        <div class="hero-tag">Smart Parking Platform</div>
+        <h1 class="hero-title">Reserve Parking<br><span>Easily.</span></h1>
+        <p class="hero-sub">Real-time parking availability across cities. Reserve, pay, and manage your parking seamlessly — book in seconds and skip the parking stress.</p>
+        <div class="d-flex gap-3 flex-wrap mb-5">
+          <a href="{{ url_for('auth.register') }}" class="nav-cta nav-cta-lg">
+            <i class="icon icon-person-badge me-2"></i>Reserve Now
+          </a>
+          <a href="{{ url_for('auth.login') }}" class="btn-ghost-light">
+            <i class="icon icon-arrow-right me-2"></i>Learn More
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="row g-3 mt-2">
+      <div class="col-6 col-md-3"><div class="hero-stat"><div class="num">{{ locations | length }}</div><div class="label">Locations</div></div></div>
+      <div class="col-6 col-md-3"><div class="hero-stat"><div class="num">{{ locations | sum(attribute="slot_summary.available") }}</div><div class="label">Slots Free</div></div></div>
+      <div class="col-6 col-md-3"><div class="hero-stat"><div class="num">24/7</div><div class="label">Operations</div></div></div>
+      <div class="col-6 col-md-3"><div class="hero-stat"><div class="num">M-Pesa</div><div class="label">& Cash Ready</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Live Locations -->
+{% if locations %}
+<section class="section-locations">
+  <div class="container">
+    <div class="section-header">
+      <h2>Available Parking Locations</h2>
+      <p>Browse real-time availability. No account needed to look.</p>
+    </div>
+    <div class="row g-4">
+      {% for loc in locations %}
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="location-card-badge">
+            {% if loc.slot_summary.available > 0 %}
+            <span class="pill pill-green">{{ loc.slot_summary.available }} free</span>
+            {% else %}
+            <span class="pill pill-red">Full</span>
+            {% endif %}
+          </div>
+
+          <div class="feature-icon">
+            <i class="icon icon-geo-alt"></i>
+          </div>
+          <h5>{{ loc.name }}</h5>
+          <p class="fs-82 text-muted mb-2">
+            <i class="icon icon-geo-alt me-1"></i>{{ loc.address }}{% if loc.county %}, {{ loc.county }}{% endif %}
+          </p>
+          <p class="fs-82 text-muted mb-3">
+            <i class="icon icon-cash me-1"></i>KES {{ loc.hourly_rate | int }}/hr
+          </p>
+
+          {% set total = loc.slot_summary.available + loc.slot_summary.occupied + loc.slot_summary.reserved %}
+          {% if total > 0 %}
+          {% set pct_free = ((loc.slot_summary.available / total) * 100) | int %}
+          <div class="progress-track">
+            <div class="progress-fill" style="width:{{ pct_free }}%;"></div>
+          </div>
+          <p class="fs-sm text-muted mb-3">
+            {{ loc.slot_summary.available }} of {{ total }} slots available
+          </p>
+          {% endif %}
+
+          <a href="{{ url_for('auth.public_location', location_id=loc.id) }}" class="nav-cta location-card-cta">
+            <i class="icon icon-eye me-1"></i>View Location
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+
+
+<!-- Footer -->
+<footer class="landing-footer">
+  <div class="container">
+    <div class="brand-name mb-2"><i class="icon icon-p-circle-fill me-2 text-red"></i>smart.park</div>
+    <p>Modern parking management for cities and facilities.</p>
+    <div class="d-flex justify-content-center gap-4 mt-3 mb-3 fs-82">
+      <a href="{{ url_for('auth.login') }}">Login</a>
+      <a href="{{ url_for('auth.register') }}">Register</a>
+    </div>
+    <p class="fs-75 mb-0">&copy; 2026 smart.park. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

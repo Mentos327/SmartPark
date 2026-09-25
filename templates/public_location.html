@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ location.name }} — smart.park</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/icons.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- Top bar -->
+<nav class="landing-nav">
+  <div class="container d-flex align-items-center justify-content-between">
+    <a href="{{ url_for('auth.index') }}" class="brand">
+      <div class="brand-icon"><i class="icon icon-p-circle-fill"></i></div>
+      smart.park
+    </a>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-light">Log In</a>
+      <a href="{{ url_for('auth.register') }}" class="nav-cta">Reserve a Slot</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
+
+  <!-- Location header -->
+  <div class="mb-4">
+    <a href="{{ url_for('auth.index') }}" class="no-underline text-muted fs-85">
+      <i class="icon icon-arrow-left me-1"></i>All Locations
+    </a>
+    <h2 class="mt-2 mb-0">{{ location.name }}</h2>
+    <p class="text-muted mb-0">
+      <i class="icon icon-geo-alt me-1"></i>
+      {{ location.address }}{% if location.county %}, {{ location.county }}{% endif %}
+    </p>
+    {% if location.description %}
+    <p class="mt-1 mb-0 fs-90">{{ location.description }}</p>
+    {% endif %}
+  </div>
+
+  <div class="row g-4">
+
+    <!-- LEFT: Info + actions -->
+    <div class="col-md-4">
+
+      <!-- Pricing -->
+      <div class="card mb-3 border-top-green">
+        <div class="card-body text-center">
+          <p class="text-muted mb-1 fs-80 fw-bold">Hourly Rate</p>
+          <div class="stat-figure-xl green">
+            KES {{ location.hourly_rate | int }}
+          </div>
+          <div class="fs-82 text-muted">per hour &bull; 30-min minimum</div>
+          <hr>
+          <p class="fs-82 text-muted mb-0">
+            1 hour = <strong>KES {{ location.hourly_rate | int }}</strong> &nbsp;&bull;&nbsp;
+            30 min = approx. <strong>KES {{ (location.hourly_rate / 2) | round(0, 'ceil') | int }}</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- Availability summary -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <p class="mb-2 fw-bold fs-90">Live Availability</p>
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="stat-box">
+                <div class="stat-num text-green">{{ slot_summary.available }}</div>
+                <div class="stat-label text-green">Available</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="stat-box">
+                <div class="stat-num text-red">{{ slot_summary.occupied }}</div>
+                <div class="stat-label text-red">Occupied</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="stat-box">
+                <div class="stat-num text-warning">{{ slot_summary.reserved }}</div>
+                <div class="stat-label text-warning">Reserved</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="stat-box">
+                <div class="stat-num text-muted">{{ slot_summary.disabled }}</div>
+                <div class="stat-label text-muted">Closed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reserve action -->
+      {% if slot_summary.available > 0 %}
+      <div class="tint-box tint-blue mb-3">
+        <p class="mb-2 fs-88 fw-bold">
+          <i class="icon icon-calendar-check me-1 text-primary"></i>Want to reserve a slot?
+        </p>
+        <p class="mb-2 fs-82 text-muted">
+          Create a free account to book a slot in advance. Walk-ins are always welcome — just drive in and the guard will check you in.
+        </p>
+        <a href="{{ url_for('auth.register') }}?next=/locations/{{ location.id }}" class="nav-cta d-block text-center mb-2">
+          Create Free Account
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-secondary w-100">
+          Already have an account? Log In
+        </a>
+      </div>
+      {% else %}
+      <div class="alert alert-warning fs-88">
+        <i class="icon icon-exclamation-triangle me-1"></i>
+        No slots available right now. Walk-ins are still welcome — check back soon.
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- RIGHT: Slot map -->
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="mb-0"><i class="icon icon-grid-3x3 me-2"></i>Slot Layout</h5>
+            <div class="d-flex gap-3 fs-78">
+              <span><span class="color-swatch swatch-green"></span> Available</span>
+              <span><span class="color-swatch swatch-red"></span> Occupied</span>
+              <span><span class="color-swatch swatch-yellow"></span> Reserved</span>
+            </div>
+          </div>
+
+          {% if slots %}
+          <div class="slot-grid">
+            {% for slot in slots %}
+            <div class="slot-card slot-{{ slot.status }}" title="Slot {{ slot.slot_number }} — {{ slot.status | capitalize }}">
+              <div class="slot-number">{{ slot.slot_number }}</div>
+              <div class="slot-status-label">{{ slot.status }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          <p class="mt-3 mb-0 fs-78 text-muted">
+            <i class="icon icon-info-circle me-1"></i>
+            Slot map updates in real time. Walk in any time — the guard will assign you a slot.
+          </p>
+          {% else %}
+          <div class="text-center py-5 text-muted">
+            <i class="icon icon-grid-3x3 fs-200"></i>
+            <p class="mt-2">Slot layout not yet configured for this location.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

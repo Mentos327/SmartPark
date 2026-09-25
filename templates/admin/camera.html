@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Camera View — {{ location.name if location }}{% endblock %}
+{% block page_title %}Camera View{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3><i class="icon icon-camera me-2 text-red"></i>{{ location.name if location }}</h3>
+    <span class="sub-title">Live Camera View and Slot Map</span>
+  </div>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="icon icon-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+<div class="row g-4">
+  <div class="col-md-7">
+    {% if cameras %}
+    <div class="row g-3">
+      {% for cam in cameras %}
+      <div class="col-12 {{ 'col-lg-6' if cameras|length > 1 else '' }}">
+        <div class="card">
+          <div class="card-header bg-dark d-flex align-items-center justify-content-between">
+            <h3 class="card-title mb-0"><i class="icon icon-camera me-2"></i>{{ cam.label }}</h3>
+            <span class="badge bg-success">Live</span>
+          </div>
+          <div class="card-body p-0 video-frame-sm">
+            <img src="{{ url_for('api.proxy_camera_feed', camera_id=cam.id) }}"
+                 class="w-100 media-h-320 media-cover" alt="{{ cam.label }}"
+                 onerror="this.alt='Camera unavailable.';" />
+          </div>
+          <div class="card-footer text-end">
+            <form method="POST" action="{{ url_for('admin.camera_delete', camera_id=cam.id) }}"
+                  onsubmit="return confirm('Remove {{ cam.label }}?');" class="d-inline">
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="icon icon-exclamation-circle me-1"></i>Remove
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card-header bg-dark"><h3 class="card-title"><i class="icon icon-camera me-2"></i>Device Camera</h3><span id="cameraStatus" class="badge bg-danger">Camera Off</span></div>
+      <div class="card-body p-0 video-frame">
+        <video id="cameraFeed" playsinline muted class="w-100 rounded media-h-300 media-cover"></video>
+      </div>
+      <div class="card-footer d-flex gap-2">
+        <button id="btnStartCamera" class="btn btn-success flex-grow-1" onclick="startCamera()"><i class="icon icon-arrow-right me-1"></i>Start Camera</button>
+        <button id="btnStop" class="btn btn-secondary" onclick="stopCamera()" disabled><i class="icon icon-exclamation-circle me-1"></i>Stop</button>
+      </div>
+    </div>
+    <div class="alert alert-info mt-3 fs-82"><i class="icon icon-info-circle me-1"></i><strong>No CCTV cameras added yet.</strong> Using this device's camera instead. Add a CCTV feed below.</div>
+    {% endif %}
+
+    <div class="card mt-3">
+      <div class="card-header bg-navy"><h3 class="card-title"><i class="icon icon-plus-circle me-2"></i>Add a CCTV Camera</h3></div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.camera_add') }}" class="row g-2 align-items-end">
+          <div class="col-4">
+            <label class="form-label">Label</label>
+            <input type="text" class="form-control" name="label" placeholder="e.g. Entrance" required />
+          </div>
+          <div class="col-6">
+            <label class="form-label">MJPEG stream URL</label>
+            <input type="url" class="form-control" name="camera_url" placeholder="http://192.168.1.101/stream" required />
+          </div>
+          <div class="col-2">
+            <button type="submit" class="btn btn-primary w-100">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5">
+    <div class="card mb-3">
+      <div class="card-header bg-navy"><h3 class="card-title"><i class="icon icon-cash me-2"></i>Availability</h3></div>
+      <div class="card-body">
+        <div class="row g-2 text-center">
+          <div class="col-6"><div class="p-2 rounded bg-tint-green"><div class="stat-figure green">{{ slot_summary.get('available',0) }}</div><div class="eyebrow eyebrow-green">Available</div></div></div>
+          <div class="col-6"><div class="p-2 rounded bg-tint-red"><div class="stat-figure red">{{ slot_summary.get('occupied',0) }}</div><div class="eyebrow eyebrow-red">Occupied</div></div></div>
+          <div class="col-6"><div class="p-2 rounded bg-tint-yellow"><div class="stat-figure yellow">{{ slot_summary.get('reserved',0) }}</div><div class="eyebrow eyebrow-yellow">Reserved</div></div></div>
+          <div class="col-6"><div class="p-2 rounded bg-tint-gray"><div class="stat-figure gray">{{ slot_summary.get('disabled',0) }}</div><div class="label-eyebrow">Closed</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header bg-dark"><h3 class="card-title"><i class="icon icon-grid-3x3 me-2"></i>Slot Layout</h3><div class="slot-legend"><div class="slot-legend-item"><span class="slot-legend-dot available"></span>Avail</div><div class="slot-legend-item"><span class="slot-legend-dot occupied"></span>Occ</div><div class="slot-legend-item"><span class="slot-legend-dot reserved"></span>Res</div></div></div>
+      <div class="card-body">
+        {% if slots %}
+        <div class="slot-grid">{% for slot in slots %}<div class="slot-card slot-{{ slot.status }}" title="Slot {{ slot.slot_number }} — {{ slot.status }}"><div class="slot-number">{{ slot.slot_number }}</div><div class="slot-status-label">{{ slot.status | capitalize }}</div></div>{% endfor %}</div>
+        {% else %}<div class="empty-state py-3"><div class="empty-icon"><i class="icon icon-grid-3x3"></i></div><p>No slots configured.</p></div>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+<canvas id="captureCanvas" class="d-none"></canvas>
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+<script src="{{ url_for('static', filename='js/slot_map.js') }}"></script>
+<script>const LOCATION_ID="{{ location.id if location else '' }}";</script>
+{% endblock %}
